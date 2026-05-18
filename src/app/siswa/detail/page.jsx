@@ -1,14 +1,15 @@
 "use client"
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
-import { useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 
-export default function SiswaProfilePage() {
+function SiswaProfileContent() {
   const { user } = useAuth();
-  const params = useParams();
-  const studentId = params.id;
+  const searchParams = useSearchParams();
+  const studentId = searchParams.get('id');
 
-  // Dummy data (ideally fetched from DB based on studentId)
+  // Dummy data fallback
   const student = {
     id: studentId,
     name: 'Ahmad Fulan',
@@ -104,5 +105,13 @@ export default function SiswaProfilePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function SiswaProfilePage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center">Memuat...</div>}>
+      <SiswaProfileContent />
+    </Suspense>
   );
 }

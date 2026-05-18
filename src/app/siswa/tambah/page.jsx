@@ -1,127 +1,85 @@
 "use client"
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getClasses, addStudent } from '@/lib/dataService';
+import { toast, Toaster } from 'react-hot-toast';
 
-// Helper array for classes
-const generateClasses = () => {
-  const kelas = [];
-  for (let i = 1; i <= 10; i++) kelas.push(`X.${i}`);
-  for (let i = 1; i <= 10; i++) kelas.push(`XI.${i}`);
-  for (let i = 1; i <= 11; i++) kelas.push(`XII.${i}`);
-  return kelas;
-};
+export default function TambahSiswa() {
+  const [classes, setClasses] = useState([]);
+  const [name, setName] = useState('');
+  const [classId, setClassId] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-const classList = generateClasses();
+  useEffect(() => {
+    const fetchClasses = async () => {
+      const cls = await getClasses();
+      setClasses(cls);
+    };
+    fetchClasses();
+  }, []);
 
-export default function TambahSiswaPage() {
-  const [formData, setFormData] = useState({
-    nama: '',
-    kelas: '',
-    nisn: ''
-  });
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    alert(`Data siswa ${formData.nama} berhasil ditambahkan! (Simulasi)`);
-    // Reset form
-    setFormData({ nama: '', kelas: '', nisn: '' });
+    if (!name || !classId) return toast.error("Lengkapi data");
+    
+    setSubmitting(true);
+    try {
+      await addStudent({ name, classId });
+      toast.success("Siswa berhasil ditambahkan!");
+      setName('');
+    } catch (error) {
+      toast.error("Gagal menambahkan siswa");
+    }
+    setSubmitting(false);
   };
 
   return (
-    <main className="flex-1 bg-slate-50 pb-20 flex flex-col h-screen overflow-hidden">
-      {/* Header */}
-      <div className="bg-white px-6 py-4 shadow-sm flex items-center border-b border-slate-100 z-10">
+    <main className="flex-1 bg-slate-50 pb-20 h-screen overflow-y-auto">
+      <Toaster />
+      <div className="bg-white px-6 py-4 shadow-sm flex items-center border-b border-slate-100 sticky top-0 z-10">
         <Link href="/siswa" className="mr-4 text-slate-500 active:scale-95 transition-transform">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </Link>
-        <h1 className="text-lg font-bold text-slate-800">Tambah Siswa Baru</h1>
+        <h1 className="text-lg font-bold text-slate-800">Tambah Siswa</h1>
       </div>
 
-      <div className="p-6 flex-1 overflow-y-auto">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-          <form onSubmit={handleSave} className="flex flex-col gap-4">
-            
-            {/* Input Nama */}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="nama" className="text-sm font-semibold text-slate-700">Nama Lengkap</label>
-              <input 
-                type="text" 
-                id="nama"
-                name="nama"
-                value={formData.nama}
-                onChange={handleChange}
-                placeholder="Masukkan nama lengkap siswa" 
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg py-3 px-4 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-shadow text-sm"
-              />
+      <div className="p-6">
+        <form onSubmit={handleSave} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-4">
+            <div>
+                <label className="text-sm font-semibold text-slate-700 block mb-2">Nama Lengkap</label>
+                <input 
+                    type="text" 
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Contoh: Budi Santoso"
+                    className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-colors text-sm"
+                />
             </div>
-
-            {/* Input NISN */}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="nisn" className="text-sm font-semibold text-slate-700">NISN / NIS</label>
-              <input 
-                type="text" 
-                id="nisn"
-                name="nisn"
-                value={formData.nisn}
-                onChange={handleChange}
-                placeholder="Masukkan nomor induk siswa" 
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg py-3 px-4 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-shadow text-sm"
-              />
-            </div>
-
-            {/* Input Kelas */}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="kelas" className="text-sm font-semibold text-slate-700">Pilih Kelas</label>
-              <div className="relative">
+            <div>
+                <label className="text-sm font-semibold text-slate-700 block mb-2">Kelas</label>
                 <select 
-                  id="kelas"
-                  name="kelas"
-                  value={formData.kelas}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg py-3 px-4 appearance-none outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-shadow text-sm text-slate-700"
+                    value={classId}
+                    onChange={e => setClassId(e.target.value)}
+                    className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-colors text-sm font-semibold text-slate-700 bg-white"
                 >
-                  <option value="" disabled>Pilih tingkat & rombel</option>
-                  <optgroup label="Kelas X">
-                    {classList.filter(c => c.startsWith('X.')).map(c => (
-                      <option key={c} value={c}>Kelas {c}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Kelas XI">
-                    {classList.filter(c => c.startsWith('XI.')).map(c => (
-                      <option key={c} value={c}>Kelas {c}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Kelas XII">
-                    {classList.filter(c => c.startsWith('XII.')).map(c => (
-                      <option key={c} value={c}>Kelas {c}</option>
-                    ))}
-                  </optgroup>
+                    <option value="">-- Pilih Kelas --</option>
+                    {classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              </div>
             </div>
-
-            {/* Tombol Simpan */}
+            
             <button 
-              type="submit"
-              className="mt-4 w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-sm shadow-primary-600/30 active:scale-95"
+                type="submit" 
+                disabled={submitting}
+                className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-xl mt-4 transition-all shadow-md active:scale-95 flex justify-center gap-2"
             >
-              Simpan Data Siswa
+                {submitting ? "Menyimpan..." : "Simpan Siswa"}
             </button>
-          </form>
+        </form>
+
+        <div className="mt-8 bg-blue-50 p-6 rounded-2xl border border-blue-100">
+            <h2 className="font-bold text-blue-800 mb-2">Import Data Massal?</h2>
+            <p className="text-xs text-blue-600 mb-4">Untuk memasukkan data siswa atau rekaman lama secara massal, disarankan untuk langsung mengunggah file CSV/Excel melalui panel Admin Firebase atau menggunakan script import khusus.</p>
+            <button onClick={() => alert("Fitur Import CSV sedang dalam pengembangan")} className="bg-white text-blue-700 px-4 py-2 rounded-lg text-xs font-bold border border-blue-200 shadow-sm active:scale-95">Gunakan Alat Import</button>
         </div>
       </div>
     </main>
