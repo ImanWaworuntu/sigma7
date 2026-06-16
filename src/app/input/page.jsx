@@ -1,14 +1,19 @@
 "use client"
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getStudents, getClasses, addRecord, getRules } from '@/lib/dataService';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { app } from '@/lib/firebase';
 import imageCompression from 'browser-image-compression';
 import { toast, Toaster } from 'react-hot-toast';
 
-export default function InputPage() {
-  const [step, setStep] = useState(1);
+function InputForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const step = parseInt(searchParams.get('step') || '1');
+  const setStep = (newStep) => router.push(`?step=${newStep}`);
+
   const [students, setStudents] = useState([]);
   const [classList, setClassList] = useState([]);
   const [violations, setViolations] = useState([]);
@@ -100,7 +105,7 @@ export default function InputPage() {
       
       // Reset
       setTimeout(() => {
-        setStep(1);
+        router.push('?step=1');
         setSelectedStudents([]);
         setType(null);
         setSelectedItem(null);
@@ -306,7 +311,7 @@ export default function InputPage() {
                     <div key={item.id} className={`p-4 rounded-xl border-2 transition-all cursor-pointer shadow-sm active:scale-[0.98] ${cardColor}`} onClick={() => setSelectedItem(item)}>
                       <div className="flex justify-between items-start mb-2 gap-2">
                         <span className="font-bold leading-tight text-slate-800">{item.desc}</span> 
-                        <span className="text-violation-600 font-black bg-white/60 px-2 py-1 rounded text-sm shrink-0 shadow-sm border border-violation-100">-{item.points}</span>
+                        <span className="text-violation-600 font-black bg-white/60 px-2 py-1 rounded text-sm shrink-0 shadow-sm border border-violation-100">{item.points}</span>
                       </div>
                     </div>
                   );
@@ -362,5 +367,13 @@ export default function InputPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function InputPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center text-slate-500">Memuat formulir...</div>}>
+      <InputForm />
+    </Suspense>
   );
 }

@@ -11,6 +11,7 @@ export default function Home() {
   const [timeFilter, setTimeFilter] = useState('week'); // today, week, month, year
   const [topPelanggaran, setTopPelanggaran] = useState([]);
   const [topPrestasi, setTopPrestasi] = useState([]);
+  const [topAbsences, setTopAbsences] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,8 +58,25 @@ export default function Home() {
       const arrPelanggaran = Object.values(studentMapPelanggaran).sort((a, b) => a.points - b.points).slice(0, 5);
       const arrPrestasi = Object.values(studentMapPrestasi).sort((a, b) => b.points - a.points).slice(0, 5);
 
+      // Fetch Upacara Absences
+      const qAbsence = query(
+        collection(db, 'attendance'),
+        where('createdAt', '>=', isoStartDate)
+      );
+      const snapAbsence = await getDocs(qAbsence);
+      const absMap = {};
+      snapAbsence.docs.forEach(doc => {
+          const data = doc.data();
+          if (data.status !== 'Hadir') {
+              if(!absMap[data.studentId]) absMap[data.studentId] = { name: data.studentName, class: data.className, count: 0 };
+              absMap[data.studentId].count += 1;
+          }
+      });
+      const arrAbsence = Object.values(absMap).sort((a,b) => b.count - a.count).slice(0, 5);
+
       setTopPelanggaran(arrPelanggaran);
       setTopPrestasi(arrPrestasi);
+      setTopAbsences(arrAbsence);
     } catch (error) {
       console.error("Error fetching top records:", error);
     }
@@ -188,6 +206,32 @@ export default function Home() {
                         </div>
                         <div className="text-reward-600 font-black text-sm bg-reward-50 px-2 py-1 rounded-md">
                         +{item.points}
+                        </div>
+                    </div>
+                    ))}
+                </div>
+                </div>
+
+                {/* 3. Top 5 Siswa Alpa Upacara */}
+                <div>
+                <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                    <span className="bg-red-100 text-red-600 p-1 rounded">📉</span> Top 5 Absen Upacara
+                </h3>
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    {topAbsences.length === 0 && <p className="text-xs text-center text-slate-400 p-4">Tidak ada data</p>}
+                    {topAbsences.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 border-b border-slate-50 last:border-0">
+                        <div className="flex items-center gap-3">
+                        <div className="h-7 w-7 bg-red-50 rounded text-red-600 font-bold flex items-center justify-center text-xs">
+                            #{i+1}
+                        </div>
+                        <div>
+                            <p className="font-bold text-slate-800 text-sm leading-tight">{item.name}</p>
+                            <p className="text-[10px] text-slate-500">{item.class}</p>
+                        </div>
+                        </div>
+                        <div className="text-red-600 font-black text-sm bg-red-50 px-2 py-1 rounded-md">
+                        {item.count}x
                         </div>
                     </div>
                     ))}

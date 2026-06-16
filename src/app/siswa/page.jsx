@@ -39,6 +39,8 @@ export default function SiswaPage() {
     let matchFilter = true;
     if (filter === 'Bermasalah') matchFilter = s.poinNet < 0;
     else if (filter === 'Berprestasi') matchFilter = s.poinNet > 0;
+    else if (filter === 'Kelas X') matchFilter = (s.classId || '').startsWith('X') && !(s.classId || '').startsWith('XI');
+    else if (filter === 'Kelas XI') matchFilter = (s.classId || '').startsWith('XI') && !(s.classId || '').startsWith('XII');
     else if (filter === 'Kelas XII') matchFilter = (s.classId || '').startsWith('XII');
     else if (filter !== 'Semua') matchFilter = s.classId === filter;
 
@@ -81,7 +83,7 @@ export default function SiswaPage() {
         
         {/* Filter chips */}
         <div className="flex gap-2 mt-4 overflow-x-auto pb-1 no-scrollbar">
-          {['Semua', 'Bermasalah', 'Berprestasi', 'Kelas XII'].map(f => (
+          {['Semua', 'Bermasalah', 'Berprestasi', 'Kelas X', 'Kelas XI', 'Kelas XII'].map(f => (
             <button 
               key={f} 
               onClick={() => setFilter(f)}

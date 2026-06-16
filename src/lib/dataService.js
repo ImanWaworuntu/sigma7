@@ -26,7 +26,7 @@ const RULES_COLLECTION = 'rules'; // Master Pelanggaran & Penghargaan
 export const getRules = async (type = null) => {
   let q;
   if (type) {
-    q = query(collection(db, RULES_COLLECTION), where('type', '==', type), orderBy('points', type === 'violation' ? 'asc' : 'desc'));
+    q = query(collection(db, RULES_COLLECTION), where('type', '==', type), orderBy('points', type === 'violation' ? 'desc' : 'asc'));
   } else {
     q = query(collection(db, RULES_COLLECTION));
   }
@@ -34,7 +34,7 @@ export const getRules = async (type = null) => {
   // Sort manually if no type specified to avoid complex index
   let rules = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   if (!type) {
-    rules.sort((a, b) => a.points - b.points);
+    rules.sort((a, b) => Math.abs(a.points) - Math.abs(b.points));
   }
   return rules;
 };

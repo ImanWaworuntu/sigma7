@@ -128,7 +128,10 @@ export default function MasterData() {
     try {
         await moveStudents(selectedStudents, selectedClassTo);
         toast.success(`${selectedStudents.length} siswa berhasil dipindahkan!`);
-        handleFetchStudentsForTransfer(selectedClassFrom);
+        setSelectedClassTo('');
+        setSelectedStudents([]);
+        const stds = await getStudents(selectedClassFrom);
+        setStudentsInClass(stds);
     } catch (e) {
         toast.error("Gagal memindahkan siswa");
     }
@@ -164,15 +167,22 @@ export default function MasterData() {
 
         // Class Aggregation
         if (!classMap[r.classId]) {
-          classMap[r.classId] = { className: r.className, points: 0, violationCount: 0, rewardCount: 0 };
+          classMap[r.classId] = { className: r.className, points: 0, violationCount: 0, rewardCount: 0, uniqueViolators: new Set() };
         }
         classMap[r.classId].points += r.points;
-        if (r.points < 0) classMap[r.classId].violationCount++;
-        else classMap[r.classId].rewardCount++;
+        if (r.points < 0) {
+            classMap[r.classId].violationCount++;
+            classMap[r.classId].uniqueViolators.add(r.studentId);
+        } else {
+            classMap[r.classId].rewardCount++;
+        }
       });
 
       const topStudents = Object.values(studentMap).sort((a,b) => a.points - b.points).slice(0, 10);
-      const topClasses = Object.values(classMap).sort((a,b) => a.points - b.points).slice(0, 10);
+      const topClasses = Object.values(classMap).map(c => ({
+          ...c,
+          uniqueViolatorCount: c.uniqueViolators.size
+      })).sort((a,b) => a.points - b.points).slice(0, 10);
 
       setRecapTopStudents(topStudents);
       setRecapTopClasses(topClasses);
@@ -232,7 +242,10 @@ export default function MasterData() {
                   <h3 className="text-xs font-bold text-slate-700 bg-slate-100 p-2 rounded mb-2">Kelas Paling Bermasalah (Top 10 Kelas)</h3>
                   {recapTopClasses.map((c, i) => (
                     <div key={i} className="flex justify-between items-center text-xs border-b border-slate-50 py-1">
-                      <span>{i+1}. {c.className}</span>
+                      <div>
+                        <span>{i+1}. {c.className}</span>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{c.uniqueViolatorCount} siswa melanggar</p>
+                      </div>
                       <span className="text-red-600 font-bold">{c.points} Pts</span>
                     </div>
                   ))}
