@@ -73,23 +73,7 @@ export default function LoginPage() {
             Masuk
           </button>
         </form>
-        
-        <div className="mt-6 text-center text-xs text-slate-400 bg-slate-50 p-3 rounded-lg border border-slate-100">
-          <p className="font-bold mb-1 text-slate-500">Akses Dummy (Untuk Testing):</p>
-          <div className="flex justify-center gap-4 mt-2">
-            <div>
-              <p className="font-semibold text-slate-600">Admin</p>
-              <p>User: admin</p>
-              <p>Pass: admin</p>
-            </div>
-            <div className="w-px bg-slate-200"></div>
-            <div>
-              <p className="font-semibold text-slate-600">Guru</p>
-              <p>User: guru</p>
-              <p>Pass: guru</p>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   );
