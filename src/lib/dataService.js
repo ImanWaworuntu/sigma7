@@ -66,12 +66,18 @@ export const deleteClass = async (classId) => {
 export const getStudents = async (classId = null) => {
   let q;
   if (classId) {
-    q = query(collection(db, STUDENTS_COLLECTION), where('classId', '==', classId), orderBy('name', 'asc'));
+    q = query(collection(db, STUDENTS_COLLECTION), where('classId', '==', classId));
   } else {
     q = query(collection(db, STUDENTS_COLLECTION), orderBy('name', 'asc'));
   }
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+  if (classId) {
+    students.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }
+  
+  return students;
 };
 
 export const addStudent = async (studentData) => {
