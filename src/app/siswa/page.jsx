@@ -19,8 +19,10 @@ export default function SiswaPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const stds = await getStudents();
-      const cls = await getClasses();
+      const [stds, cls] = await Promise.all([
+        getStudents(),
+        getClasses()
+      ]);
       setStudents(stds);
       setClasses(cls);
     } catch (error) {

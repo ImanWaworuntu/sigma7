@@ -115,6 +115,29 @@ export const getTopRecords = async (type = 'pelanggaran', limitCount = 5) => {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
+export const getRecords = async (filters = {}) => {
+  const queryConstraints = [];
+  if (filters.classId && filters.classId !== 'all') {
+    queryConstraints.push(where('classId', '==', filters.classId));
+  }
+  if (filters.type && filters.type !== 'all') {
+    queryConstraints.push(where('type', '==', filters.type));
+  }
+  queryConstraints.push(orderBy('createdAt', 'desc'));
+
+  const q = query(collection(db, RECORDS_COLLECTION), ...queryConstraints);
+  const snapshot = await getDocs(q);
+  let results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+  if (filters.startDate && filters.endDate) {
+    results = results.filter(r => {
+      const d = r.date || r.createdAt.split('T')[0];
+      return d >= filters.startDate && d <= filters.endDate;
+    });
+  }
+  return results;
+};
+
 // --- ATTENDANCE (Upacara) ---
 export const saveAttendance = async (attendanceData) => {
   return await addDoc(collection(db, ATTENDANCE_COLLECTION), {

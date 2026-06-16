@@ -15,7 +15,7 @@ export default function InputPage() {
   const [search, setSearch] = useState('');
   const [filterKelas, setFilterKelas] = useState('');
   
-  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedStudents, setSelectedStudents] = useState([]);
   const [type, setType] = useState(null); // 'reward' or 'violation'
   const [selectedItem, setSelectedItem] = useState(null);
   const [searchItem, setSearchItem] = useState(''); 
@@ -38,11 +38,19 @@ export default function InputPage() {
   if (search.length > 0) filteredStudents = filteredStudents.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
   const showStudents = search.length > 0 || filterKelas !== '';
 
-  const handleSelectStudent = (student) => {
-    setSelectedStudent(student);
-    setSearch('');
-    setFilterKelas('');
-    setStep(2);
+  const handleToggleStudent = (student) => {
+    setSelectedStudents(prev => {
+      const exists = prev.find(s => s.id === student.id);
+      if (exists) return prev.filter(s => s.id !== student.id);
+      return [...prev, student];
+    });
+  };
+
+  const selectAllInClass = () => {
+    if (filterKelas) {
+      const classStudents = students.filter(s => s.classId === filterKelas);
+      setSelectedStudents(classStudents);
+    }
   };
 
   const handleSelectType = (selectedType) => {
@@ -70,26 +78,28 @@ export default function InputPage() {
         photoUrl = await getDownloadURL(fileRef);
       }
 
-      await addRecord({
-        studentId: selectedStudent.id,
-        studentName: selectedStudent.name,
-        classId: selectedStudent.classId,
-        className: selectedStudent.classId,
-        type: type,
-        itemId: selectedItem.id,
-        description: selectedItem.desc,
-        category: selectedItem.category,
-        points: type === 'reward' ? selectedItem.points : -Math.abs(selectedItem.points),
-        date: tanggal,
-        photoUrl: photoUrl
-      });
+      for (const student of selectedStudents) {
+        await addRecord({
+          studentId: student.id,
+          studentName: student.name,
+          classId: student.classId,
+          className: student.classId,
+          type: type,
+          itemId: selectedItem.id,
+          description: selectedItem.desc,
+          category: selectedItem.category,
+          points: type === 'reward' ? selectedItem.points : -Math.abs(selectedItem.points),
+          date: tanggal,
+          photoUrl: photoUrl
+        });
+      }
 
       toast.success('Data berhasil disimpan!');
       
       // Reset
       setTimeout(() => {
         setStep(1);
-        setSelectedStudent(null);
+        setSelectedStudents([]);
         setType(null);
         setSelectedItem(null);
         setSearchItem('');
@@ -160,24 +170,36 @@ export default function InputPage() {
               </div>
             </div>
 
+            {filterKelas && (
+              <button 
+                onClick={selectAllInClass}
+                className="mb-3 w-full bg-slate-100 text-slate-700 font-bold text-xs py-2 rounded-lg border border-slate-200 active:bg-slate-200 transition-colors"
+              >
+                Pilih Semua di Kelas {filterKelas}
+              </button>
+            )}
+
             {showStudents && (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden max-h-[50vh] overflow-y-auto">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden max-h-[40vh] overflow-y-auto">
                 {filteredStudents.length > 0 ? (
-                  filteredStudents.map(student => (
-                    <div 
-                      key={student.id} 
-                      onClick={() => handleSelectStudent(student)}
-                      className="p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50 active:bg-slate-100 cursor-pointer flex justify-between items-center"
-                    >
-                      <div>
-                        <div className="font-bold text-slate-800">{student.name}</div>
-                        <div className="text-sm text-slate-500 font-medium">Kelas {student.classId}</div>
+                  filteredStudents.map(student => {
+                    const isSelected = selectedStudents.some(s => s.id === student.id);
+                    return (
+                      <div 
+                        key={student.id} 
+                        onClick={() => handleToggleStudent(student)}
+                        className={`p-4 border-b border-slate-50 last:border-0 cursor-pointer flex justify-between items-center transition-colors ${isSelected ? 'bg-primary-50 hover:bg-primary-100' : 'hover:bg-slate-50'}`}
+                      >
+                        <div>
+                          <div className={`font-bold ${isSelected ? 'text-primary-700' : 'text-slate-800'}`}>{student.name}</div>
+                          <div className={`text-sm font-medium ${isSelected ? 'text-primary-500' : 'text-slate-500'}`}>Kelas {student.classId}</div>
+                        </div>
+                        <div className={`p-1 rounded-full ${isSelected ? 'text-white bg-primary-600' : 'text-slate-300 bg-slate-100'}`}>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                        </div>
                       </div>
-                      <div className="text-primary-600 bg-primary-50 p-1 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="p-8 text-center text-slate-500">
                     <p className="font-semibold text-slate-700 mb-1">Siswa tidak ditemukan</p>
@@ -186,17 +208,26 @@ export default function InputPage() {
                 )}
               </div>
             )}
+
+            {selectedStudents.length > 0 && (
+              <button 
+                onClick={() => setStep(2)}
+                className="mt-4 w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-xl shadow-md transition-all active:scale-95"
+              >
+                Lanjut ({selectedStudents.length} Siswa Terpilih)
+              </button>
+            )}
           </div>
         )}
 
         {/* Step 2: Select Type */}
-        {step === 2 && selectedStudent && (
+        {step === 2 && selectedStudents.length > 0 && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="mb-6 bg-slate-100 rounded-xl p-4 flex items-center justify-between border border-slate-200">
               <div>
                 <div className="text-xs text-slate-500 mb-1 font-semibold uppercase">Siswa Terpilih:</div>
-                <div className="font-bold text-slate-800 text-lg">{selectedStudent.name}</div>
-                <div className="text-sm text-slate-500">{selectedStudent.classId}</div>
+                <div className="font-bold text-slate-800 text-lg">{selectedStudents.length === 1 ? selectedStudents[0].name : `${selectedStudents.length} Siswa`}</div>
+                <div className="text-sm text-slate-500">{selectedStudents.length === 1 ? selectedStudents[0].classId : 'Multiple Classes'}</div>
               </div>
               <button onClick={() => setStep(1)} className="text-xs text-primary-600 font-bold bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm active:scale-95">Ganti</button>
             </div>
@@ -235,7 +266,7 @@ export default function InputPage() {
               <div className="flex justify-between items-center pb-2 border-b border-slate-200">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">Siswa Terpilih</span>
-                  <span className="font-bold text-slate-800">{selectedStudent?.name}</span> <span className="text-xs text-slate-500">({selectedStudent?.classId})</span>
+                  <span className="font-bold text-slate-800">{selectedStudents.length === 1 ? selectedStudents[0].name : `${selectedStudents.length} Siswa`}</span> <span className="text-xs text-slate-500">({selectedStudents.length === 1 ? selectedStudents[0].classId : 'Multiple Classes'})</span>
                 </div>
                 <button onClick={() => setStep(1)} className="text-xs text-slate-600 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm font-semibold active:scale-95">Ubah</button>
               </div>
