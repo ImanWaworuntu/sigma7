@@ -65,10 +65,18 @@ export function AuthProvider({ children }) {
     }
   }, [user, loading, pathname, router]);
 
+  // Determine if we should show the loading screen to prevent flashing protected content
+  let showLoading = loading;
+  if (!loading) {
+    if (!user && pathname !== '/login') showLoading = true;
+    else if (user && pathname === '/login') showLoading = true;
+    else if (user && user.role !== 'admin' && pathname === '/siswa/tambah') showLoading = true;
+  }
+
   return (
     <AuthContext.Provider value={{ user, login, logout, loading }}>
-      {/* Jika loading, tampilkan skeleton atau layar putih sejenak agar tidak berkedip */}
-      {loading ? <div className="h-screen w-full flex items-center justify-center bg-slate-50"><div className="animate-pulse flex flex-col items-center"><div className="h-12 w-12 bg-slate-200 rounded-full mb-4"></div><div className="h-4 w-24 bg-slate-200 rounded"></div></div></div> : children}
+      {/* Jika loading atau sedang proses redirect, tampilkan skeleton agar tidak berkedip */}
+      {showLoading ? <div className="h-screen w-full flex items-center justify-center bg-slate-50"><div className="animate-pulse flex flex-col items-center"><div className="h-12 w-12 bg-slate-200 rounded-full mb-4"></div><div className="h-4 w-24 bg-slate-200 rounded"></div></div></div> : children}
     </AuthContext.Provider>
   );
 }
