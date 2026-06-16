@@ -29,42 +29,36 @@ export default function Home() {
       
       const isoStartDate = startDate.toISOString();
       
-      // Fetch Pelanggaran (points < 0)
-      const qPelanggaran = query(
+      // Fetch ALL records for the period to avoid complex composite index requirements
+      const qRecords = query(
         collection(db, 'records'),
-        where('createdAt', '>=', isoStartDate),
-        where('points', '<', 0),
-        orderBy('points', 'asc'),
-        limit(5)
+        where('createdAt', '>=', isoStartDate)
       );
-      const snapPelanggaran = await getDocs(qPelanggaran);
+      const snapRecords = await getDocs(qRecords);
       
-      // Fetch Prestasi (points > 0)
-      const qPrestasi = query(
-        collection(db, 'records'),
-        where('createdAt', '>=', isoStartDate),
-        where('points', '>', 0),
-        orderBy('points', 'desc'),
-        limit(5)
-      );
-      const snapPrestasi = await getDocs(qPrestasi);
+      const studentMapPelanggaran = {};
+      const studentMapPrestasi = {};
 
-      // Aggregate by student
-      const aggregate = (snap, isPelanggaran) => {
-        const studentMap = {};
-        snap.docs.forEach(doc => {
+      snapRecords.docs.forEach(doc => {
           const data = doc.data();
-          if (!studentMap[data.studentId]) {
-             studentMap[data.studentId] = { name: data.studentName, class: data.className, points: 0 };
+          if (data.points < 0) {
+              if (!studentMapPelanggaran[data.studentId]) {
+                  studentMapPelanggaran[data.studentId] = { name: data.studentName, class: data.className, points: 0 };
+              }
+              studentMapPelanggaran[data.studentId].points += data.points;
+          } else if (data.points > 0) {
+              if (!studentMapPrestasi[data.studentId]) {
+                  studentMapPrestasi[data.studentId] = { name: data.studentName, class: data.className, points: 0 };
+              }
+              studentMapPrestasi[data.studentId].points += data.points;
           }
-          studentMap[data.studentId].points += data.points;
-        });
-        const arr = Object.values(studentMap).sort((a, b) => isPelanggaran ? a.points - b.points : b.points - a.points);
-        return arr.slice(0, 5);
-      };
+      });
 
-      setTopPelanggaran(aggregate(snapPelanggaran, true));
-      setTopPrestasi(aggregate(snapPrestasi, false));
+      const arrPelanggaran = Object.values(studentMapPelanggaran).sort((a, b) => a.points - b.points).slice(0, 5);
+      const arrPrestasi = Object.values(studentMapPrestasi).sort((a, b) => b.points - a.points).slice(0, 5);
+
+      setTopPelanggaran(arrPelanggaran);
+      setTopPrestasi(arrPrestasi);
     } catch (error) {
       console.error("Error fetching top records:", error);
     }

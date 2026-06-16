@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { getClasses, addClass, deleteClass, getStudents, moveStudents, graduateClass12, addStudent } from '@/lib/dataService';
+import { getClasses, addClass, deleteClass, getStudents, moveStudents, graduateClass12, getRules, addRule, deleteRule, getRecords } from '@/lib/dataService';
 import { toast, Toaster } from 'react-hot-toast';
 
 export default function MasterData() {
@@ -15,17 +15,33 @@ export default function MasterData() {
   const [studentsInClass, setStudentsInClass] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
 
+  // Rules State
+  const [rules, setRules] = useState([]);
+  const [ruleType, setRuleType] = useState('violation');
+  const [ruleDesc, setRuleDesc] = useState('');
+  const [rulePoints, setRulePoints] = useState('');
+  const [ruleCategory, setRuleCategory] = useState('Ringan');
+
+  // Recap State
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [recapTopStudents, setRecapTopStudents] = useState([]);
+  const [recapTopClasses, setRecapTopClasses] = useState([]);
+  const [recapLoading, setRecapLoading] = useState(false);
+
   useEffect(() => {
-    fetchClasses();
+    fetchInitData();
   }, []);
 
-  const fetchClasses = async () => {
+  const fetchInitData = async () => {
     setLoading(true);
-    const cls = await getClasses();
+    const [cls, rls] = await Promise.all([getClasses(), getRules()]);
     setClasses(cls);
+    setRules(rls);
     setLoading(false);
   };
 
+  // --- CLASSES ---
   const handleAddClass = async (e) => {
     e.preventDefault();
     if (!newClassName) return;
@@ -33,7 +49,7 @@ export default function MasterData() {
       await addClass({ name: newClassName.toUpperCase() });
       toast.success(`Kelas ${newClassName} ditambahkan`);
       setNewClassName('');
-      fetchClasses();
+      const cls = await getClasses(); setClasses(cls);
     } catch (e) {
       toast.error('Gagal tambah kelas');
     }
@@ -44,13 +60,48 @@ export default function MasterData() {
     try {
       await deleteClass(id);
       toast.success('Kelas dihapus');
-      fetchClasses();
+      const cls = await getClasses(); setClasses(cls);
     } catch (e) {
       toast.error('Gagal hapus');
     }
   };
 
-  // --- Kenaikan / Pindah Kelas ---
+  // --- RULES ---
+  const handleAddRule = async (e) => {
+    e.preventDefault();
+    if (!ruleDesc || !rulePoints) return;
+    try {
+      let pts = parseInt(rulePoints);
+      if (ruleType === 'violation' && pts > 0) pts = -pts;
+      if (ruleType === 'reward' && pts < 0) pts = Math.abs(pts);
+
+      await addRule({
+        type: ruleType,
+        desc: ruleDesc,
+        points: pts,
+        category: ruleType === 'reward' ? 'Prestasi' : ruleCategory
+      });
+      toast.success('Aturan berhasil ditambahkan');
+      setRuleDesc('');
+      setRulePoints('');
+      const rls = await getRules(); setRules(rls);
+    } catch (e) {
+      toast.error('Gagal tambah aturan');
+    }
+  };
+
+  const handleDeleteRule = async (id) => {
+    if (!confirm("Hapus aturan ini?")) return;
+    try {
+      await deleteRule(id);
+      toast.success('Aturan dihapus');
+      const rls = await getRules(); setRules(rls);
+    } catch (e) {
+      toast.error('Gagal hapus aturan');
+    }
+  };
+
+  // --- TRANSFER ---
   const handleFetchStudentsForTransfer = async (classId) => {
     setSelectedClassFrom(classId);
     if (!classId) {
@@ -59,7 +110,7 @@ export default function MasterData() {
     }
     const stds = await getStudents(classId);
     setStudentsInClass(stds);
-    setSelectedStudents([]); // Reset selection
+    setSelectedStudents([]);
   };
 
   const toggleStudentSelection = (id) => {
@@ -77,14 +128,14 @@ export default function MasterData() {
     try {
         await moveStudents(selectedStudents, selectedClassTo);
         toast.success(`${selectedStudents.length} siswa berhasil dipindahkan!`);
-        handleFetchStudentsForTransfer(selectedClassFrom); // Refresh list
+        handleFetchStudentsForTransfer(selectedClassFrom);
     } catch (e) {
         toast.error("Gagal memindahkan siswa");
     }
   };
 
   const handleGraduate = async () => {
-    if (!confirm("PERHATIAN! Tindakan ini akan menghapus/mengarsipkan SEMUA siswa yang berada di kelas berawalan 'XII'. Lanjutkan?")) return;
+    if (!confirm("PERHATIAN! Tindakan ini meluluskan siswa kelas XII. Lanjutkan?")) return;
     try {
         await graduateClass12();
         toast.success("Siswa kelas XII berhasil diluluskan!");
@@ -93,10 +144,49 @@ export default function MasterData() {
     }
   };
 
+  // --- RECAP ---
+  const handleGenerateRecap = async () => {
+    setRecapLoading(true);
+    try {
+      const allRecords = await getRecords({ startDate, endDate });
+      
+      const studentMap = {};
+      const classMap = {};
+
+      allRecords.forEach(r => {
+        // Student Aggregation
+        if (!studentMap[r.studentId]) {
+          studentMap[r.studentId] = { name: r.studentName, className: r.className, points: 0, violationCount: 0, rewardCount: 0 };
+        }
+        studentMap[r.studentId].points += r.points;
+        if (r.points < 0) studentMap[r.studentId].violationCount++;
+        else studentMap[r.studentId].rewardCount++;
+
+        // Class Aggregation
+        if (!classMap[r.classId]) {
+          classMap[r.classId] = { className: r.className, points: 0, violationCount: 0, rewardCount: 0 };
+        }
+        classMap[r.classId].points += r.points;
+        if (r.points < 0) classMap[r.classId].violationCount++;
+        else classMap[r.classId].rewardCount++;
+      });
+
+      const topStudents = Object.values(studentMap).sort((a,b) => a.points - b.points).slice(0, 10);
+      const topClasses = Object.values(classMap).sort((a,b) => a.points - b.points).slice(0, 10);
+
+      setRecapTopStudents(topStudents);
+      setRecapTopClasses(topClasses);
+      toast.success("Rekap berhasil dibuat");
+    } catch (error) {
+      toast.error("Gagal membuat rekap");
+    }
+    setRecapLoading(false);
+  };
+
   return (
     <main className="flex-1 overflow-y-auto bg-slate-50 pb-20">
       <Toaster />
-      <div className="bg-primary-600 text-white rounded-b-3xl px-6 pt-10 pb-8 shadow-md">
+      <div className="bg-primary-600 text-white rounded-b-3xl px-6 pt-10 pb-8 shadow-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
             <Link href="/" className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -107,6 +197,89 @@ export default function MasterData() {
 
       <div className="px-4 mt-6 space-y-6">
         
+        {/* REKAPITULASI KHUSUS */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+            <h2 className="font-bold text-slate-800 mb-3 border-b pb-2 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              Rekapitulasi Cepat
+            </h2>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <div>
+                <label className="text-[10px] font-semibold text-slate-500 uppercase">Mulai</label>
+                <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="w-full border rounded-lg p-2 text-sm outline-none bg-slate-50"/>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-500 uppercase">Sampai</label>
+                <input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="w-full border rounded-lg p-2 text-sm outline-none bg-slate-50"/>
+              </div>
+            </div>
+            <button onClick={handleGenerateRecap} disabled={recapLoading} className="w-full bg-slate-800 text-white font-bold py-2 rounded-lg text-sm mb-4">
+              {recapLoading ? 'Menghitung...' : 'Buat Rekap'}
+            </button>
+
+            {recapTopStudents.length > 0 && (
+              <div className="space-y-4 border-t pt-4">
+                <div>
+                  <h3 className="text-xs font-bold text-slate-700 bg-slate-100 p-2 rounded mb-2">Paling Sering Melanggar (Top 10 Siswa)</h3>
+                  {recapTopStudents.map((s, i) => (
+                    <div key={i} className="flex justify-between items-center text-xs border-b border-slate-50 py-1">
+                      <span>{i+1}. {s.name} ({s.className})</span>
+                      <span className="text-red-600 font-bold">{s.points} Pts</span>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-700 bg-slate-100 p-2 rounded mb-2">Kelas Paling Bermasalah (Top 10 Kelas)</h3>
+                  {recapTopClasses.map((c, i) => (
+                    <div key={i} className="flex justify-between items-center text-xs border-b border-slate-50 py-1">
+                      <span>{i+1}. {c.className}</span>
+                      <span className="text-red-600 font-bold">{c.points} Pts</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+        </div>
+
+        {/* MANAJEMEN ATURAN */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+            <h2 className="font-bold text-slate-800 mb-3 border-b pb-2">Aturan & Poin</h2>
+            <form onSubmit={handleAddRule} className="space-y-3 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div className="flex gap-2">
+                <select value={ruleType} onChange={e=>setRuleType(e.target.value)} className="flex-1 border rounded-lg p-2 text-sm outline-none">
+                  <option value="violation">Pelanggaran</option>
+                  <option value="reward">Prestasi</option>
+                </select>
+                {ruleType === 'violation' && (
+                  <select value={ruleCategory} onChange={e=>setRuleCategory(e.target.value)} className="flex-1 border rounded-lg p-2 text-sm outline-none">
+                    <option value="Ringan">Ringan</option>
+                    <option value="Sedang">Sedang</option>
+                    <option value="Berat">Berat</option>
+                  </select>
+                )}
+              </div>
+              <input type="text" placeholder="Deskripsi Aturan..." value={ruleDesc} onChange={e=>setRuleDesc(e.target.value)} className="w-full border rounded-lg p-2 text-sm outline-none"/>
+              <div className="flex gap-2">
+                <input type="number" placeholder="Poin (Cth: 10)" value={rulePoints} onChange={e=>setRulePoints(e.target.value)} className="flex-1 border rounded-lg p-2 text-sm outline-none"/>
+                <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg font-bold text-sm">Tambah</button>
+              </div>
+            </form>
+
+            <div className="h-48 overflow-y-auto space-y-2 border-t pt-2">
+              {rules.map(r => (
+                <div key={r.id} className="flex justify-between items-center bg-white border border-slate-100 p-2 rounded shadow-sm text-xs">
+                  <div>
+                    <span className={`font-bold mr-2 ${r.type === 'violation' ? 'text-red-600' : 'text-green-600'}`}>
+                      {r.points > 0 ? `+${r.points}` : r.points}
+                    </span>
+                    <span>{r.desc} <span className="text-[10px] text-slate-400">({r.category})</span></span>
+                  </div>
+                  <button onClick={() => handleDeleteRule(r.id)} className="text-red-500 hover:text-red-700 p-1">&times;</button>
+                </div>
+              ))}
+            </div>
+        </div>
+
         {/* MANAJEMEN KELAS */}
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
             <h2 className="font-bold text-slate-800 mb-3 border-b pb-2">Manajemen Kelas</h2>

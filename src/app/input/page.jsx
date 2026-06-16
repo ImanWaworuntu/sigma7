@@ -1,8 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { violations, rewards } from '@/lib/data';
-import { getStudents, getClasses, addRecord } from '@/lib/dataService';
+import { getStudents, getClasses, addRecord, getRules } from '@/lib/dataService';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { app } from '@/lib/firebase';
 import imageCompression from 'browser-image-compression';
@@ -12,6 +11,8 @@ export default function InputPage() {
   const [step, setStep] = useState(1);
   const [students, setStudents] = useState([]);
   const [classList, setClassList] = useState([]);
+  const [violations, setViolations] = useState([]);
+  const [rewards, setRewards] = useState([]);
   const [search, setSearch] = useState('');
   const [filterKelas, setFilterKelas] = useState('');
   
@@ -25,10 +26,11 @@ export default function InputPage() {
 
   useEffect(() => {
     const loadInitData = async () => {
-      const cls = await getClasses();
-      const stds = await getStudents();
+      const [cls, stds, rulesData] = await Promise.all([getClasses(), getStudents(), getRules()]);
       setClassList(cls);
       setStudents(stds);
+      setViolations(rulesData.filter(r => r.type === 'violation'));
+      setRewards(rulesData.filter(r => r.type === 'reward'));
     };
     loadInitData();
   }, []);

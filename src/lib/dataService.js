@@ -20,6 +20,32 @@ const STUDENTS_COLLECTION = 'students';
 const CLASSES_COLLECTION = 'classes';
 const RECORDS_COLLECTION = 'records'; // Pelanggaran & Prestasi
 const ATTENDANCE_COLLECTION = 'attendance';
+const RULES_COLLECTION = 'rules'; // Master Pelanggaran & Penghargaan
+
+// --- RULES (Master Pelanggaran & Penghargaan) ---
+export const getRules = async (type = null) => {
+  let q;
+  if (type) {
+    q = query(collection(db, RULES_COLLECTION), where('type', '==', type), orderBy('points', type === 'violation' ? 'asc' : 'desc'));
+  } else {
+    q = query(collection(db, RULES_COLLECTION));
+  }
+  const snapshot = await getDocs(q);
+  // Sort manually if no type specified to avoid complex index
+  let rules = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  if (!type) {
+    rules.sort((a, b) => a.points - b.points);
+  }
+  return rules;
+};
+
+export const addRule = async (ruleData) => {
+  return await addDoc(collection(db, RULES_COLLECTION), ruleData);
+};
+
+export const deleteRule = async (ruleId) => {
+  return await deleteDoc(doc(db, RULES_COLLECTION, ruleId));
+};
 
 // --- CLASSES ---
 export const getClasses = async () => {
