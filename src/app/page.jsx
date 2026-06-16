@@ -8,7 +8,7 @@ import { format, startOfDay, startOfWeek, startOfMonth, startOfYear } from 'date
 
 export default function Home() {
   const { user, logout } = useAuth();
-  const [timeFilter, setTimeFilter] = useState('today'); // today, week, month, year
+  const [timeFilter, setTimeFilter] = useState('week'); // today, week, month, year
   const [topPelanggaran, setTopPelanggaran] = useState([]);
   const [topPrestasi, setTopPrestasi] = useState([]);
   const [loading, setLoading] = useState(true);
