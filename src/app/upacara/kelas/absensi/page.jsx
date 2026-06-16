@@ -21,7 +21,8 @@ function UpacaraContent() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // If testing with dummy ID, generate dummy students
+    if (!classId) return;
+
     if (classId === 'dummy') {
         const dummy = Array.from({length: 15}).map((_, i) => ({ id: `std${i}`, name: `Siswa Dummy ${i+1}`, classId: 'X.1' }));
         setStudents(dummy);
@@ -32,19 +33,23 @@ function UpacaraContent() {
         return;
     }
 
+    let isMounted = true;
     const fetchStudents = async () => {
       try {
         const data = await getStudents(classId);
-        setStudents(data);
-        const initialAtt = {};
-        data.forEach(s => initialAtt[s.id] = 'Hadir'); // Default to Hadir
-        setAttendance(initialAtt);
+        if (isMounted) {
+          setStudents(data);
+          const initialAtt = {};
+          data.forEach(s => initialAtt[s.id] = 'Hadir'); // Default to Hadir
+          setAttendance(initialAtt);
+        }
       } catch (error) {
-        toast.error("Gagal memuat daftar siswa");
+        if (isMounted) toast.error("Gagal memuat daftar siswa");
       }
-      setLoading(false);
+      if (isMounted) setLoading(false);
     };
     fetchStudents();
+    return () => { isMounted = false; };
   }, [classId]);
 
   const handleStatusChange = (studentId, status) => {
@@ -142,38 +147,45 @@ function UpacaraContent() {
       </div>
 
       <div className="px-4 mt-6 space-y-3">
-        {students.map((student, idx) => (
-            <div key={student.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-3">
-                <div className="flex gap-3 items-center">
-                    <span className="text-slate-400 font-bold text-sm w-5">{idx+1}.</span>
-                    <span className="font-semibold text-slate-800 flex-1">{student.name}</span>
+        {students.map((student, idx) => {
+            const isAbsent = attendance[student.id] !== 'Hadir';
+            return (
+                <div key={student.id} className={`bg-white p-4 rounded-xl shadow-sm border transition-all cursor-pointer ${isAbsent ? 'border-red-400 bg-red-50' : 'border-slate-100 active:scale-[0.98]'}`}>
+                    <div className="flex gap-3 items-center" onClick={() => handleStatusChange(student.id, isAbsent ? 'Hadir' : 'Alpa')}>
+                        <span className={`font-bold text-sm w-5 ${isAbsent ? 'text-red-500' : 'text-slate-400'}`}>{idx+1}.</span>
+                        <span className={`font-semibold flex-1 ${isAbsent ? 'text-red-900' : 'text-slate-800'}`}>{student.name}</span>
+                        <div className={`h-6 w-6 rounded flex items-center justify-center border ${isAbsent ? 'bg-red-500 border-red-500 text-white' : 'bg-slate-50 border-slate-200 text-transparent'}`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                        </div>
+                    </div>
+                    
+                    {/* Absent Options (Only show if marked absent) */}
+                    {isAbsent && (
+                        <div className="flex bg-white rounded-lg p-1 border border-red-200 mt-3 overflow-hidden shadow-sm">
+                            {['Alpa', 'Izin', 'Bolos'].map(status => {
+                                const isSelected = attendance[student.id] === status;
+                                let colorClass = "text-slate-500 hover:bg-slate-100";
+                                if (isSelected) {
+                                    if (status === 'Izin') colorClass = "bg-blue-500 text-white";
+                                    else if (status === 'Alpa') colorClass = "bg-red-500 text-white";
+                                    else if (status === 'Bolos') colorClass = "bg-orange-500 text-white";
+                                }
+                                
+                                return (
+                                    <button
+                                        key={status}
+                                        onClick={(e) => { e.stopPropagation(); handleStatusChange(student.id, status); }}
+                                        className={`flex-1 py-1.5 text-[11px] font-bold rounded-md transition-all ${colorClass}`}
+                                    >
+                                        {status}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
-                
-                {/* Checkboxes */}
-                <div className="flex bg-slate-50 rounded-lg p-1 border border-slate-100 overflow-hidden">
-                    {['Hadir', 'Izin', 'Alpa', 'Bolos'].map(status => {
-                        const isSelected = attendance[student.id] === status;
-                        let colorClass = "text-slate-500 hover:bg-slate-200";
-                        if (isSelected) {
-                            if (status === 'Hadir') colorClass = "bg-green-500 text-white shadow-sm";
-                            else if (status === 'Izin') colorClass = "bg-blue-500 text-white shadow-sm";
-                            else if (status === 'Alpa') colorClass = "bg-red-500 text-white shadow-sm";
-                            else if (status === 'Bolos') colorClass = "bg-orange-500 text-white shadow-sm";
-                        }
-                        
-                        return (
-                            <button
-                                key={status}
-                                onClick={() => handleStatusChange(student.id, status)}
-                                className={`flex-1 py-1.5 text-[11px] font-bold rounded-md transition-all ${colorClass}`}
-                            >
-                                {status}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-        ))}
+            );
+        })}
       </div>
 
       {/* Photo Upload Section */}
