@@ -33,11 +33,20 @@ export function AuthProvider({ children }) {
       role = 'guru';
     }
 
+    // OSIS access
+    else if (username === 'osis' && password === 'osis') {
+      role = 'osis';
+    }
+
     if (role) {
       const userData = { username, role };
       setUser(userData);
       localStorage.setItem('sigma_user', JSON.stringify(userData));
-      router.push('/');
+      if (role === 'osis') {
+        router.push('/upacara');
+      } else {
+        router.push('/');
+      }
       return true;
     }
     return false;
@@ -62,6 +71,11 @@ export function AuthProvider({ children }) {
       if (user && user.role !== 'admin' && pathname === '/siswa/tambah') {
         router.push('/');
       }
+
+      // OSIS only routes
+      if (user && user.role === 'osis' && !pathname.startsWith('/upacara')) {
+        router.push('/upacara');
+      }
     }
   }, [user, loading, pathname, router]);
 
@@ -71,6 +85,7 @@ export function AuthProvider({ children }) {
     if (!user && pathname !== '/login') showLoading = true;
     else if (user && pathname === '/login') showLoading = true;
     else if (user && user.role !== 'admin' && pathname === '/siswa/tambah') showLoading = true;
+    else if (user && user.role === 'osis' && !pathname.startsWith('/upacara')) showLoading = true;
   }
 
   return (

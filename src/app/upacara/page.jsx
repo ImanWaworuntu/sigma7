@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { collection, query, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getClasses } from '@/lib/dataService';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function Upacara() {
+  const { user, logout } = useAuth();
   const [classes, setClasses] = useState([]);
   const [topAbsences, setTopAbsences] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,9 +50,15 @@ export default function Upacara() {
       {/* Header */}
       <div className="bg-blue-600 text-white rounded-b-3xl px-6 pt-10 pb-16 shadow-md relative overflow-hidden">
         <div className="relative z-10 flex justify-between items-center">
-            <Link href="/" className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            </Link>
+            {user?.role === 'osis' ? (
+                <button onClick={logout} className="bg-red-500/80 hover:bg-red-600 p-2 rounded-full backdrop-blur-sm transition-colors" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                </button>
+            ) : (
+                <Link href="/" className="bg-white/20 p-2 rounded-full backdrop-blur-sm transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                </Link>
+            )}
             <h1 className="text-xl font-bold tracking-tight">Absensi Upacara</h1>
             <div className="w-10"></div>
         </div>
