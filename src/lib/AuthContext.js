@@ -21,9 +21,15 @@ export function AuthProvider({ children }) {
 
   const login = (username, password) => {
     let role = null;
-    if (username === 'admin' && password === 'admin') {
+    // Admin access (also includes Guru access)
+    if (
+      (username === 'admin' && password === 'admin') || 
+      (username === 'iman.waw@gmail.com' && password === 'sigma123')
+    ) {
       role = 'admin';
-    } else if (username === 'guru' && password === 'guru') {
+    } 
+    // Guru access
+    else if (username === 'guru' && password === 'guru') {
       role = 'guru';
     }
 
