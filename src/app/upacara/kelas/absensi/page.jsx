@@ -92,20 +92,24 @@ function UpacaraContent() {
 
       // 2. Save Attendance Records
       const dateStr = new Date().toISOString().split('T')[0];
+      let savedCount = 0;
       for (const student of students) {
         const status = attendance[student.id];
-        await saveAttendance({
-          studentId: student.id,
-          studentName: student.name,
-          classId: student.classId,
-          className: student.classId, // Need actual class name here
-          status: status,
-          date: dateStr,
-          photos: photoUrls // Attach same photos to the class record, or keep a separate class_attendance collection
-        });
+        if (status !== 'Hadir') {
+          await saveAttendance({
+            studentId: student.id,
+            studentName: student.name,
+            classId: student.classId,
+            className: student.classId, // Need actual class name here
+            status: status,
+            date: dateStr,
+            photos: photoUrls // Attach same photos to the class record, or keep a separate class_attendance collection
+          });
+          savedCount++;
+        }
       }
       
-      toast.success("Absensi berhasil disimpan!");
+      toast.success(`Berhasil! ${savedCount} siswa tidak hadir dicatat.`);
       setTimeout(() => {
           window.location.href = '/upacara';
       }, 1500);

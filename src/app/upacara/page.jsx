@@ -101,7 +101,7 @@ export default function Upacara() {
                     </div>
                 )}
                 {classes.map(c => (
-                    <Link key={c.id} href={`/upacara/kelas/absensi?classId=${c.id}`} className="bg-white border border-slate-200 rounded-xl p-4 flex justify-between items-center shadow-sm active:scale-95 transition-transform">
+                    <Link key={c.id} href={`/upacara/kelas/absensi?classId=${c.name}`} className="bg-white border border-slate-200 rounded-xl p-4 flex justify-between items-center shadow-sm active:scale-95 transition-transform">
                         <span className="font-bold text-slate-800">{c.name}</span>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </Link>
