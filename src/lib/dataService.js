@@ -125,12 +125,17 @@ export const addStudent = async (studentData) => {
     ...studentData,
     poinPelanggaran: 0,
     poinPenghargaan: 0,
+    spIssuedLevel: 0,
     createdAt: new Date().toISOString()
   });
 };
 
 export const updateStudent = async (studentId, studentData) => {
   return await updateDoc(doc(db, STUDENTS_COLLECTION, studentId), studentData);
+};
+
+export const issueSp = async (studentId, level) => {
+  return await updateDoc(doc(db, STUDENTS_COLLECTION, studentId), { spIssuedLevel: level });
 };
 
 export const deleteStudent = async (studentId) => {

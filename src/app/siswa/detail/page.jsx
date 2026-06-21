@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import { getStudentById, getRecords } from '@/lib/dataService';
+import { getStudentById, getRecords, issueSp } from '@/lib/dataService';
 
 function SiswaProfileContent() {
   const { user } = useAuth();
@@ -46,20 +46,36 @@ function SiswaProfileContent() {
   // Hitung HP dari points secara terpisah
   const hpMerah = Math.abs(student.poinPelanggaran || 0);
   const hpHijau = student.poinPenghargaan || 0;
+  const issued = student.spIssuedLevel || 0;
 
   let bannerText = null;
   let bannerColor = '';
+  let pendingSpLevel = 0;
 
-  if (hpMerah >= 200) {
+  if (hpMerah >= 200 && issued < 3) {
     bannerText = 'Siswa telah mencapai batas maksimal Pelanggaran. SP 3 segera diproses!';
     bannerColor = 'bg-red-100 text-red-700 border-red-200';
-  } else if (hpMerah >= 150) {
+    pendingSpLevel = 3;
+  } else if (hpMerah >= 150 && issued < 2) {
     bannerText = 'Pelanggaran Kritis (≥150). Siswa memerlukan SP 2.';
     bannerColor = 'bg-orange-100 text-orange-700 border-orange-200';
-  } else if (hpMerah >= 50) {
+    pendingSpLevel = 2;
+  } else if (hpMerah >= 50 && hpMerah < 150 && issued < 1) {
     bannerText = 'Pelanggaran Menumpuk (≥50). Siswa memerlukan SP 1.';
     bannerColor = 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    pendingSpLevel = 1;
   }
+
+  const handleMarkSp = async () => {
+    if (pendingSpLevel > 0 && confirm(`Tandai SP ${pendingSpLevel} sudah resmi diberikan kepada siswa ini?`)) {
+      try {
+        await issueSp(studentId, pendingSpLevel);
+        fetchData();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
 
   return (
     <main className="flex-1 bg-slate-50 pb-20 min-h-screen flex flex-col">
@@ -95,8 +111,11 @@ function SiswaProfileContent() {
 
         {/* Warning Banner */}
         {bannerText && (
-          <div className={`rounded-xl p-4 mb-6 border font-bold text-sm text-center shadow-sm print:hidden ${bannerColor} animate-pulse`}>
-            ⚠️ {bannerText}
+          <div className={`rounded-xl p-4 mb-6 border font-bold text-sm text-center shadow-sm print:hidden ${bannerColor} flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-2`}>
+            <span className="flex items-center gap-2">⚠️ {bannerText}</span>
+            <button onClick={handleMarkSp} className="bg-white/90 text-slate-800 px-4 py-2 rounded-lg shadow-sm hover:bg-white active:scale-95 transition-all text-xs whitespace-nowrap">
+              Tandai SP {pendingSpLevel} Diberikan
+            </button>
           </div>
         )}
 

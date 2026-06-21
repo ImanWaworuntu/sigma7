@@ -82,7 +82,14 @@ export default function Home() {
         orderBy('poinPelanggaran', 'asc')
       );
       const snapSP = await getDocs(qSP);
-      const arrSP = snapSP.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const arrSP = snapSP.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(student => {
+          const hpMerah = Math.abs(student.poinPelanggaran || 0);
+          const issued = student.spIssuedLevel || 0;
+          if (hpMerah >= 200 && issued < 3) return true;
+          if (hpMerah >= 150 && issued < 2) return true;
+          if (hpMerah >= 50 && hpMerah < 150 && issued < 1) return true;
+          return false;
+      });
 
       setTopPelanggaran(arrPelanggaran);
       setTopPrestasi(arrPrestasi);
@@ -163,9 +170,10 @@ export default function Home() {
                 <div className="flex flex-col gap-3">
                     {spStudents.map((student) => {
                         const hpMerah = Math.abs(student.poinPelanggaran || 0);
+                        const issued = student.spIssuedLevel || 0;
                         let spLevel = 'SP 1';
-                        if (hpMerah >= 200) spLevel = 'SP 3';
-                        else if (hpMerah >= 150) spLevel = 'SP 2';
+                        if (hpMerah >= 200 && issued < 3) spLevel = 'SP 3';
+                        else if (hpMerah >= 150 && issued < 2) spLevel = 'SP 2';
 
                         return (
                             <Link href={`/siswa/detail?id=${student.id}`} key={student.id} className="bg-red-50 border border-red-200 rounded-xl p-3 flex justify-between items-center shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group">
