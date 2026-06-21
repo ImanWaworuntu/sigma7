@@ -37,8 +37,10 @@ export default function Home() {
       const allStudents = await getStudents();
       const indicatorMap = {};
       const genderMap = {};
+      const classMap = {};
       allStudents.forEach(s => {
           genderMap[s.id] = s.gender;
+          classMap[s.id] = s.classId;
           const hpMerah = Math.abs(s.poinPelanggaran || 0);
           if (hpMerah >= 200) indicatorMap[s.id] = '⚠️⚠️⚠️';
           else if (hpMerah >= 150) indicatorMap[s.id] = '⚠️⚠️';
@@ -59,14 +61,15 @@ export default function Home() {
 
       snapRecords.docs.forEach(doc => {
           const data = doc.data();
+          const currentClass = classMap[data.studentId] || data.className;
           if (data.points < 0) {
               if (!studentMapPelanggaran[data.studentId]) {
-                  studentMapPelanggaran[data.studentId] = { id: data.studentId, name: data.studentName, class: data.className, points: 0 };
+                  studentMapPelanggaran[data.studentId] = { id: data.studentId, name: data.studentName, class: currentClass, points: 0 };
               }
               studentMapPelanggaran[data.studentId].points += data.points;
           } else if (data.points > 0) {
               if (!studentMapPrestasi[data.studentId]) {
-                  studentMapPrestasi[data.studentId] = { id: data.studentId, name: data.studentName, class: data.className, points: 0 };
+                  studentMapPrestasi[data.studentId] = { id: data.studentId, name: data.studentName, class: currentClass, points: 0 };
               }
               studentMapPrestasi[data.studentId].points += data.points;
           }
@@ -84,8 +87,9 @@ export default function Home() {
       const absMap = {};
       snapAbsence.docs.forEach(doc => {
           const data = doc.data();
+          const currentClass = classMap[data.studentId] || data.className;
           if (data.status !== 'Hadir') {
-              if(!absMap[data.studentId]) absMap[data.studentId] = { id: data.studentId, name: data.studentName, class: data.className, count: 0 };
+              if(!absMap[data.studentId]) absMap[data.studentId] = { id: data.studentId, name: data.studentName, class: currentClass, count: 0 };
               absMap[data.studentId].count += 1;
           }
       });

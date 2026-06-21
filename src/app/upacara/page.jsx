@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { collection, query, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { getClasses } from '@/lib/dataService';
+import { getClasses, getStudents } from '@/lib/dataService';
 import { useAuth } from '@/lib/AuthContext';
 
 export default function Upacara() {
@@ -19,8 +19,11 @@ export default function Upacara() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const cls = await getClasses();
+      const [cls, allStudents] = await Promise.all([getClasses(), getStudents()]);
       setClasses(cls);
+      
+      const classMap = {};
+      allStudents.forEach(s => classMap[s.id] = s.classId);
 
       // Dummy calculation for top absences since we need to aggregate
       // Ideally we fetch from attendance collection and group by student
@@ -30,8 +33,9 @@ export default function Upacara() {
       const absMap = {};
       snap.docs.forEach(doc => {
         const data = doc.data();
+        const currentClass = classMap[data.studentId] || data.className;
         if (data.status !== 'Hadir') {
-            if(!absMap[data.studentId]) absMap[data.studentId] = { name: data.studentName, class: data.className, count: 0 };
+            if(!absMap[data.studentId]) absMap[data.studentId] = { name: data.studentName, class: currentClass, count: 0 };
             absMap[data.studentId].count += 1;
         }
       });
