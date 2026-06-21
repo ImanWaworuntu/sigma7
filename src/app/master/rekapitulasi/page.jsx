@@ -2,6 +2,8 @@
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import { getClasses, getRecords } from '@/lib/dataService';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b'];
@@ -11,7 +13,6 @@ export default function RekapitulasiLanjutan() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setDate(1); // 1st of current month
@@ -19,6 +20,8 @@ export default function RekapitulasiLanjutan() {
   });
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedClass, setSelectedClass] = useState('all');
+  const [selectedJenjang, setSelectedJenjang] = useState('all');
+  const [selectedType, setSelectedType] = useState('all'); // 'all', 'violation', 'reward'
 
   useEffect(() => {
     const init = async () => {
@@ -32,13 +35,31 @@ export default function RekapitulasiLanjutan() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const recs = await getRecords({ startDate, endDate, classId: selectedClass });
+      const recs = await getRecords({ startDate, endDate, classId: selectedClass === 'all' ? null : selectedClass });
       setRecords(recs);
     } catch (e) {
       console.error(e);
     }
     setLoading(false);
   };
+
+  // --- FILTERED DATA ---
+  const filteredRecords = useMemo(() => {
+    return records.filter(r => {
+      // Filter by Type
+      if (selectedType === 'violation' && r.points > 0) return false;
+      if (selectedType === 'reward' && r.points < 0) return false;
+      
+      // Filter by Jenjang
+      if (selectedJenjang !== 'all') {
+        const className = r.className || '';
+        if (selectedJenjang === 'X' && !className.startsWith('X.')) return false;
+        if (selectedJenjang === 'XI' && !className.startsWith('XI.')) return false;
+        if (selectedJenjang === 'XII' && !className.startsWith('XII.')) return false;
+      }
+      return true;
+    });
+  }, [records, selectedType, selectedJenjang]);
 
   // --- DERIVED DATA FOR CHARTS ---
 
@@ -47,7 +68,7 @@ export default function RekapitulasiLanjutan() {
     let totalPelanggaran = 0;
     let totalPenghargaan = 0;
     const uniqueStudents = new Set();
-    records.forEach(r => {
+    filteredRecords.forEach(r => {
       uniqueStudents.add(r.studentId);
       if (r.points < 0) totalPelanggaran += 1;
       else if (r.points > 0) totalPenghargaan += 1;
@@ -57,31 +78,149 @@ export default function RekapitulasiLanjutan() {
       penghargaan: totalPenghargaan,
       students: uniqueStudents.size
     };
-  }, [records]);
+  }, [filteredRecords]);
 
   // 2. Trend by Date (Bar Chart)
   const trendData = useMemo(() => {
     const map = {};
-    records.forEach(r => {
+    filteredRecords.forEach(r => {
       const dateStr = r.date || r.createdAt.split('T')[0];
       if (!map[dateStr]) map[dateStr] = { date: dateStr, Pelanggaran: 0, Penghargaan: 0 };
       if (r.points < 0) map[dateStr].Pelanggaran += 1;
       else if (r.points > 0) map[dateStr].Penghargaan += 1;
     });
     return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
-  }, [records]);
+  }, [filteredRecords]);
 
   // 3. Violations by Class (Pie/Donut Chart)
   const classPieData = useMemo(() => {
     const map = {};
-    records.forEach(r => {
+    filteredRecords.forEach(r => {
       if (r.points < 0) {
         if (!map[r.className]) map[r.className] = { name: r.className, value: 0 };
         map[r.className].value += 1;
       }
     });
     return Object.values(map).sort((a,b) => b.value - a.value).slice(0, 8); // Top 8
-  }, [records]);
+  }, [filteredRecords]);
+
+  // --- EXPORT PDF ---
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Laporan Rekapitulasi Kedisiplinan SIGMA 7", 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Periode: ${startDate} s/d ${endDate}`, 14, 27);
+    doc.text(`Filter Kelas: ${selectedClass === 'all' ? 'Semua Kelas' : classes.find(c=>c.id===selectedClass)?.name || selectedClass}`, 14, 32);
+    doc.text(`Filter Jenjang: ${selectedJenjang === 'all' ? 'Semua Jenjang' : 'Kelas ' + selectedJenjang}`, 14, 37);
+    doc.text(`Tipe Data: ${selectedType === 'all' ? 'Pelanggaran & Penghargaan' : selectedType === 'violation' ? 'Hanya Pelanggaran' : 'Hanya Penghargaan'}`, 14, 42);
+
+    let currentY = 50;
+
+    // Grouping: Jenjang -> Class -> Student
+    const groupedData = {}; // { jenjang: { className: { studentName: { points, records: [] } } } }
+
+    filteredRecords.forEach(r => {
+      // Determine Jenjang
+      let jenjang = 'Lainnya';
+      if (r.className?.startsWith('X.')) jenjang = 'Kelas X';
+      else if (r.className?.startsWith('XI.')) jenjang = 'Kelas XI';
+      else if (r.className?.startsWith('XII.')) jenjang = 'Kelas XII';
+
+      if (!groupedData[jenjang]) groupedData[jenjang] = {};
+      if (!groupedData[jenjang][r.className]) groupedData[jenjang][r.className] = {};
+      if (!groupedData[jenjang][r.className][r.studentName]) {
+        groupedData[jenjang][r.className][r.studentName] = {
+          totalPelanggaran: 0,
+          totalPenghargaan: 0,
+          records: []
+        };
+      }
+
+      groupedData[jenjang][r.className][r.studentName].records.push(r);
+      if (r.points < 0) groupedData[jenjang][r.className][r.studentName].totalPelanggaran += Math.abs(r.points);
+      else groupedData[jenjang][r.className][r.studentName].totalPenghargaan += r.points;
+    });
+
+    const jenjangKeys = Object.keys(groupedData).sort();
+
+    jenjangKeys.forEach(jenjang => {
+      // Jenjang Header
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(34, 197, 94); // green
+      doc.text(jenjang, 14, currentY);
+      currentY += 8;
+
+      const classKeys = Object.keys(groupedData[jenjang]).sort();
+      classKeys.forEach(className => {
+        // Class Header
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(59, 130, 246); // blue
+        doc.text(`Kelas: ${className}`, 14, currentY);
+        currentY += 6;
+
+        const studentKeys = Object.keys(groupedData[jenjang][className]).sort();
+        
+        studentKeys.forEach(studentName => {
+          const studentData = groupedData[jenjang][className][studentName];
+          
+          // Determine SP
+          let spStatus = "-";
+          if (studentData.totalPelanggaran >= 200) spStatus = "SP 3 (>= 200 Poin)";
+          else if (studentData.totalPelanggaran >= 150) spStatus = "SP 2 (>= 150 Poin)";
+          else if (studentData.totalPelanggaran >= 50) spStatus = "SP 1 (>= 50 Poin)";
+
+          const tableData = studentData.records.map((r, idx) => [
+            idx + 1,
+            r.date || r.createdAt.split('T')[0],
+            r.description,
+            r.points > 0 ? `+${r.points}` : r.points,
+            r.points > 0 ? 'Penghargaan' : 'Pelanggaran'
+          ]);
+
+          doc.autoTable({
+            startY: currentY,
+            head: [[`Siswa: ${studentName}`, `Total Pelanggaran: ${studentData.totalPelanggaran}`, `Total Penghargaan: ${studentData.totalPenghargaan}`, `Status: ${spStatus}`, '']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold' },
+            styles: { fontSize: 8 },
+            columnStyles: {
+              0: { cellWidth: 10 },
+              1: { cellWidth: 25 },
+              2: { cellWidth: 'auto' },
+              3: { cellWidth: 20 },
+              4: { cellWidth: 30 }
+            },
+            margin: { left: 14, right: 14 }
+          });
+
+          currentY = doc.lastAutoTable.finalY + 8;
+
+          // Page break if too low
+          if (currentY > 270) {
+            doc.addPage();
+            currentY = 20;
+          }
+        });
+        currentY += 4;
+      });
+      currentY += 6;
+      if (currentY > 270) {
+        doc.addPage();
+        currentY = 20;
+      }
+    });
+
+    doc.save(`Rekapitulasi_Sigma7_${startDate}_to_${endDate}.pdf`);
+  };
 
   return (
     <main className="flex-1 overflow-y-auto bg-slate-50 pb-20">
@@ -107,6 +246,23 @@ export default function RekapitulasiLanjutan() {
              <input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-2 text-sm outline-none text-white focus:border-primary-500 transition-colors"/>
            </div>
            <div className="flex-1 min-w-[120px]">
+             <label className="text-[10px] font-semibold text-slate-300 uppercase mb-1 block">Tipe Data</label>
+             <select value={selectedType} onChange={e=>setSelectedType(e.target.value)} className="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-2 text-sm outline-none text-white focus:border-primary-500 transition-colors appearance-none">
+               <option value="all">Semua Tipe</option>
+               <option value="violation">Hanya Pelanggaran</option>
+               <option value="reward">Hanya Penghargaan</option>
+             </select>
+           </div>
+           <div className="flex-1 min-w-[100px]">
+             <label className="text-[10px] font-semibold text-slate-300 uppercase mb-1 block">Jenjang</label>
+             <select value={selectedJenjang} onChange={e=>setSelectedJenjang(e.target.value)} className="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-2 text-sm outline-none text-white focus:border-primary-500 transition-colors appearance-none">
+               <option value="all">Semua</option>
+               <option value="X">Kelas X</option>
+               <option value="XI">Kelas XI</option>
+               <option value="XII">Kelas XII</option>
+             </select>
+           </div>
+           <div className="flex-1 min-w-[120px]">
              <label className="text-[10px] font-semibold text-slate-300 uppercase mb-1 block">Kelas</label>
              <select value={selectedClass} onChange={e=>setSelectedClass(e.target.value)} className="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-2 text-sm outline-none text-white focus:border-primary-500 transition-colors appearance-none">
                <option value="all">Semua Kelas</option>
@@ -115,6 +271,10 @@ export default function RekapitulasiLanjutan() {
            </div>
            <button onClick={fetchData} className="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 h-[38px] flex items-center justify-center min-w-[100px]">
              {loading ? 'Memuat...' : 'Terapkan'}
+           </button>
+           <button onClick={handleExportPDF} className="bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 h-[38px] flex items-center justify-center min-w-[140px] gap-2 ml-auto">
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+             Cetak PDF
            </button>
         </div>
       </div>
@@ -217,7 +377,7 @@ export default function RekapitulasiLanjutan() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
                 Tabel Riwayat Lengkap
               </span>
-              <span className="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-1 rounded-full">{records.length} Data</span>
+              <span className="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-1 rounded-full">{filteredRecords.length} Data</span>
            </h2>
            <div className="overflow-x-auto">
              <table className="w-full text-left text-sm">
@@ -231,12 +391,12 @@ export default function RekapitulasiLanjutan() {
                  </tr>
                </thead>
                <tbody>
-                 {records.length === 0 ? (
+                 {filteredRecords.length === 0 ? (
                    <tr>
                      <td colSpan="5" className="p-8 text-center text-slate-400">Tidak ada data pada periode ini</td>
                    </tr>
                  ) : (
-                   records.map(r => (
+                   filteredRecords.map(r => (
                      <tr key={r.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                        <td className="p-3 whitespace-nowrap text-slate-600">{r.date || r.createdAt.split('T')[0]}</td>
                        <td className="p-3 font-bold text-slate-800">
