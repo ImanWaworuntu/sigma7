@@ -34,7 +34,7 @@ export function AuthProvider({ children }) {
     }
 
     // OSIS access
-    else if (username === 'osis' && password === 'osis') {
+    else if (username.startsWith('osis') && password === 'osis') {
       role = 'osis';
     }
 

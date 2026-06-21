@@ -48,19 +48,43 @@ export default function Upacara() {
   return (
     <main className="flex-1 overflow-y-auto bg-slate-50 pb-20">
       {/* Header */}
-      <div className="bg-blue-600 text-white rounded-b-3xl px-6 pt-10 pb-16 shadow-md relative overflow-hidden">
-        <div className="relative z-10 flex justify-between items-center">
+      <div className="bg-gradient-to-br from-blue-600 to-blue-800 backdrop-blur-md bg-opacity-90 text-white rounded-b-3xl px-6 pt-10 pb-16 shadow-lg relative overflow-hidden">
+        {/* Decorative circles */}
+        <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-white/10 blur-xl"></div>
+        
+        <div className="relative z-10 flex justify-between items-start">
             {user?.role === 'osis' ? (
-                <button onClick={logout} className="bg-red-500/80 hover:bg-red-600 p-2 rounded-full backdrop-blur-sm transition-colors" title="Logout">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                </button>
+              <div className="w-full flex justify-between items-start">
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight">SIGMA 7</h1>
+                  <p className="text-blue-100 text-sm font-medium">SMAN 7 Makassar</p>
+                  <div className="mt-2 inline-flex items-center gap-2 bg-blue-700/50 rounded-full pr-3 pl-1 py-1">
+                    <div className="h-6 w-6 bg-white rounded-full flex items-center justify-center text-blue-700 font-bold text-xs uppercase">
+                      {user?.username?.charAt(0) || 'O'}
+                    </div>
+                    <span className="text-xs font-medium capitalize">{user?.username || 'OSIS'}</span>
+                    <button onClick={logout} className="ml-2 text-[10px] bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded-full transition-colors shadow-sm">Logout</button>
+                  </div>
+                </div>
+                <div className="h-14 w-14 bg-white/20 rounded-lg flex items-center justify-center p-1 shadow-md backdrop-blur-sm">
+                  <div className="h-full w-full bg-white/50 rounded animate-pulse" /> {/* Placeholder for logo */}
+                </div>
+              </div>
             ) : (
-                <Link href="/" className="bg-white/20 p-2 rounded-full backdrop-blur-sm transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                </Link>
+              <div className="w-full flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <Link href="/" className="bg-white/20 p-2 rounded-full backdrop-blur-sm transition-colors shadow-sm active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    </Link>
+                    <div>
+                        <h1 className="text-xl font-bold tracking-tight">Absensi Upacara</h1>
+                        <p className="text-blue-100 text-xs font-medium">Pilih Kelas</p>
+                    </div>
+                </div>
+                <div className="w-10"></div>
+              </div>
             )}
-            <h1 className="text-xl font-bold tracking-tight">Absensi Upacara</h1>
-            <div className="w-10"></div>
         </div>
       </div>
 

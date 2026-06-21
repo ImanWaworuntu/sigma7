@@ -132,7 +132,7 @@ export default function Home() {
               <div className="h-6 w-6 bg-white rounded-full flex items-center justify-center text-primary-700 font-bold text-xs uppercase">
                 {user?.role?.charAt(0) || 'U'}
               </div>
-              <span className="text-xs font-medium capitalize">{user?.role || 'Admin'}</span>
+              <span className="text-xs font-medium capitalize">{user?.username || user?.role || 'Admin'}</span>
               <button onClick={logout} className="ml-2 text-[10px] bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded-full transition-colors">Logout</button>
             </div>
           </div>
@@ -145,7 +145,7 @@ export default function Home() {
       {/* Quick Actions */}
       <div className="px-6 mt-6">
         <h2 className="text-sm font-semibold text-slate-500 mb-3 uppercase tracking-wider">Aksi Cepat</h2>
-        <div className="grid grid-cols-4 gap-3">
+        <div className={`grid gap-3 ${user?.role === 'admin' ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <Link href="/input" className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl p-2 flex flex-col items-center justify-center shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 active:scale-95 group">
             <div className="bg-primary-50 text-primary-600 h-10 w-10 rounded-full flex items-center justify-center mb-1 group-hover:bg-primary-100 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
