@@ -117,15 +117,15 @@ export default function SiswaPage() {
                                   'bg-slate-100 text-slate-500';
               
               return (
-                <div key={student.id} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all">
+                <Link href={`/siswa/detail?id=${student.id}`} key={student.id} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all group block cursor-pointer">
                   <div className="flex items-center gap-3">
-                    <div className="relative group">
+                    <div className="relative">
                       <div className={`h-12 w-12 rounded-full flex items-center justify-center font-bold text-lg ${statusColor}`}>
                         {student.name.charAt(0)}
                       </div>
                     </div>
                     <div>
-                      <Link href={`/siswa/detail?id=${student.id}`} className="font-bold text-slate-800 leading-tight hover:text-primary-600 hover:underline block">{student.name}</Link>
+                      <p className="font-bold text-slate-800 leading-tight group-hover:text-primary-600 transition-colors">{student.name}</p>
                       <p className="text-xs text-slate-500 mt-1">{student.classId}</p>
                     </div>
                   </div>
@@ -145,7 +145,7 @@ export default function SiswaPage() {
                       <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${Math.min(100, (hpHijau/200)*100)}%` }}></div>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
