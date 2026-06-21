@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import { getClasses, getRecords } from '@/lib/dataService';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b'];
@@ -185,7 +185,7 @@ export default function RekapitulasiLanjutan() {
             r.points > 0 ? 'Penghargaan' : 'Pelanggaran'
           ]);
 
-          doc.autoTable({
+          autoTable(doc, {
             startY: currentY,
             head: [[`Siswa: ${studentName}`, `Total Pelanggaran: ${studentData.totalPelanggaran}`, `Total Penghargaan: ${studentData.totalPenghargaan}`, `Status: ${spStatus}`, '']],
             body: tableData,
