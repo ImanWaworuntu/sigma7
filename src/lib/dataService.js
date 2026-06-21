@@ -185,11 +185,12 @@ export const getRecords = async (filters = {}) => {
   if (filters.studentId) {
     queryConstraints.push(where('studentId', '==', filters.studentId));
   }
-  queryConstraints.push(orderBy('createdAt', 'desc'));
-
   const q = query(collection(db, RECORDS_COLLECTION), ...queryConstraints);
   const snapshot = await getDocs(q);
   let results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+  // Fix composite index issues by sorting client-side
+  results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (filters.startDate && filters.endDate) {
     results = results.filter(r => {
