@@ -356,7 +356,15 @@ export default function RekapitulasiLanjutan() {
               <div key={className} className="mb-6 pl-4 border-l-2 border-black">
                 <h5 className="text-sm font-bold mb-3 underline">Kelas: {className}</h5>
                 
-                {Object.keys(groupedDataToPrint[jenjang][className]).sort().map(studentName => {
+                {Object.keys(groupedDataToPrint[jenjang][className]).sort((a, b) => {
+                  const studentA = groupedDataToPrint[jenjang][className][a];
+                  const studentB = groupedDataToPrint[jenjang][className][b];
+                  
+                  if (studentB.totalPelanggaran !== studentA.totalPelanggaran) {
+                    return studentB.totalPelanggaran - studentA.totalPelanggaran;
+                  }
+                  return studentB.totalPenghargaan - studentA.totalPenghargaan;
+                }).map(studentName => {
                   const studentData = groupedDataToPrint[jenjang][className][studentName];
                   let spStatus = "-";
                   if (studentData.totalPelanggaran >= 200) spStatus = "SP 3";
