@@ -20,9 +20,11 @@ export default function RekapitulasiLanjutan() {
   const [selectedClass, setSelectedClass] = useState('all');
   const [selectedJenjang, setSelectedJenjang] = useState('all');
   const [selectedType, setSelectedType] = useState('all'); // 'all', 'violation', 'reward'
+  const [selectedFormat, setSelectedFormat] = useState('class'); // 'class', 'global'
 
   const [appliedJenjang, setAppliedJenjang] = useState('all');
   const [appliedType, setAppliedType] = useState('all');
+  const [appliedFormat, setAppliedFormat] = useState('class');
 
   useEffect(() => {
     const init = async () => {
@@ -36,6 +38,7 @@ export default function RekapitulasiLanjutan() {
   const handleApplyFilters = async () => {
     setAppliedJenjang(selectedJenjang);
     setAppliedType(selectedType);
+    setAppliedFormat(selectedFormat);
     setLoading(true);
     try {
       const recs = await getRecords({ startDate, endDate, classId: selectedClass === 'all' ? null : selectedClass });
@@ -135,6 +138,35 @@ export default function RekapitulasiLanjutan() {
     return groupedData;
   }, [filteredRecords]);
 
+  // --- GLOBAL RANKING DATA FOR PRINTING ---
+  const globalRankingDataToPrint = useMemo(() => {
+    const studentMap = {};
+
+    filteredRecords.forEach(r => {
+      if (!studentMap[r.studentName]) {
+        studentMap[r.studentName] = {
+          className: r.className,
+          totalPelanggaran: 0,
+          totalPenghargaan: 0,
+          records: []
+        };
+      }
+      studentMap[r.studentName].records.push(r);
+      if (r.points < 0) studentMap[r.studentName].totalPelanggaran += Math.abs(r.points);
+      else studentMap[r.studentName].totalPenghargaan += r.points;
+    });
+
+    return Object.keys(studentMap).map(studentName => ({
+      studentName,
+      ...studentMap[studentName]
+    })).sort((a, b) => {
+      if (b.totalPelanggaran !== a.totalPelanggaran) {
+        return b.totalPelanggaran - a.totalPelanggaran;
+      }
+      return b.totalPenghargaan - a.totalPenghargaan;
+    });
+  }, [filteredRecords]);
+
   return (
     <main className="flex-1 overflow-y-auto bg-slate-50 pb-20 print:bg-white print:overflow-visible print:pb-0">
       <div className="print:hidden">
@@ -181,6 +213,13 @@ export default function RekapitulasiLanjutan() {
              <select value={selectedClass} onChange={e=>setSelectedClass(e.target.value)} className="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-2 text-sm outline-none text-white focus:border-primary-500 transition-colors appearance-none">
                <option value="all">Semua Kelas</option>
                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+             </select>
+           </div>
+           <div className="flex-1 min-w-[120px]">
+             <label className="text-[10px] font-semibold text-slate-300 uppercase mb-1 block">Format Cetak</label>
+             <select value={selectedFormat} onChange={e=>setSelectedFormat(e.target.value)} className="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-2 text-sm outline-none text-white focus:border-primary-500 transition-colors appearance-none">
+               <option value="class">Per Kelas</option>
+               <option value="global">Peringkat Global</option>
              </select>
            </div>
            <button onClick={handleApplyFilters} className="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 h-[38px] flex items-center justify-center min-w-[100px]">
@@ -346,74 +385,126 @@ export default function RekapitulasiLanjutan() {
         </div>
 
         <h3 className="text-lg font-bold text-center mb-2 uppercase underline">Laporan Rekapitulasi Kedisiplinan</h3>
-        <p className="text-center mb-6 text-xs">Periode: {startDate} s/d {endDate} | Tipe: {appliedType === 'all' ? 'Semua' : appliedType === 'violation' ? 'Pelanggaran' : 'Penghargaan'} | Jenjang: {appliedJenjang === 'all' ? 'Semua' : 'Kelas ' + appliedJenjang}</p>
+        <p className="text-center mb-6 text-xs">Periode: {startDate} s/d {endDate} | Tipe: {appliedType === 'all' ? 'Semua' : appliedType === 'violation' ? 'Pelanggaran' : 'Penghargaan'} | Jenjang: {appliedJenjang === 'all' ? 'Semua' : 'Kelas ' + appliedJenjang} | Format: {appliedFormat === 'global' ? 'Peringkat Global' : 'Per Kelas'}</p>
 
-        {Object.keys(groupedDataToPrint).sort().map(jenjang => (
-          <div key={jenjang} className="mb-8">
-            <h4 className="text-md font-bold bg-slate-100 p-2 border border-black mb-4 uppercase">{jenjang}</h4>
-            
-            {Object.keys(groupedDataToPrint[jenjang]).sort().map(className => (
-              <div key={className} className="mb-6 pl-4 border-l-2 border-black">
-                <h5 className="text-sm font-bold mb-3 underline">Kelas: {className}</h5>
-                
-                {Object.keys(groupedDataToPrint[jenjang][className]).sort((a, b) => {
-                  const studentA = groupedDataToPrint[jenjang][className][a];
-                  const studentB = groupedDataToPrint[jenjang][className][b];
-                  
-                  if (studentB.totalPelanggaran !== studentA.totalPelanggaran) {
-                    return studentB.totalPelanggaran - studentA.totalPelanggaran;
-                  }
-                  return studentB.totalPenghargaan - studentA.totalPenghargaan;
-                }).map(studentName => {
-                  const studentData = groupedDataToPrint[jenjang][className][studentName];
-                  let spStatus = "-";
-                  if (studentData.totalPelanggaran >= 200) spStatus = "SP 3";
-                  else if (studentData.totalPelanggaran >= 150) spStatus = "SP 2";
-                  else if (studentData.totalPelanggaran >= 50) spStatus = "SP 1";
+        {appliedFormat === 'global' ? (
+          <div>
+            {globalRankingDataToPrint.map((studentData, index) => {
+              let spStatus = "-";
+              if (studentData.totalPelanggaran >= 200) spStatus = "SP 3";
+              else if (studentData.totalPelanggaran >= 150) spStatus = "SP 2";
+              else if (studentData.totalPelanggaran >= 50) spStatus = "SP 1";
 
-                  return (
-                    <div key={studentName} className="mb-6" style={{ pageBreakInside: 'avoid' }}>
-                      <div className="flex justify-between items-end border-b-2 border-black mb-2 pb-1">
-                        <h6 className="font-bold text-sm">Nama: {studentName}</h6>
-                        <div className="text-[10px] space-x-4 font-bold uppercase">
-                          <span>Total Pelanggaran: <span className={studentData.totalPelanggaran > 0 ? "text-red-600" : ""}>{studentData.totalPelanggaran}</span></span>
-                          <span>Total Penghargaan: <span className={studentData.totalPenghargaan > 0 ? "text-green-600" : ""}>{studentData.totalPenghargaan}</span></span>
-                          <span>Status: <span className={spStatus !== '-' ? 'text-red-600' : ''}>{spStatus}</span></span>
-                        </div>
-                      </div>
-                      
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="border-b border-slate-300 bg-slate-50">
-                            <th className="py-1 px-2 w-10">No</th>
-                            <th className="py-1 px-2 w-24">Tanggal</th>
-                            <th className="py-1 px-2">Deskripsi</th>
-                            <th className="py-1 px-2 w-16">Poin</th>
-                            <th className="py-1 px-2 w-24">Tipe</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {studentData.records.map((r, idx) => (
-                            <tr key={idx} className="border-b border-slate-200">
-                              <td className="py-1 px-2">{idx + 1}</td>
-                              <td className="py-1 px-2">{r.date || r.createdAt.split('T')[0]}</td>
-                              <td className="py-1 px-2 break-words text-justify pr-4">{r.description}</td>
-                              <td className="py-1 px-2 font-bold">{r.points > 0 ? `+${r.points}` : r.points}</td>
-                              <td className="py-1 px-2">{r.points > 0 ? 'Penghargaan' : 'Pelanggaran'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+              return (
+                <div key={studentData.studentName} className="mb-6" style={{ pageBreakInside: 'avoid' }}>
+                  <div className="flex justify-between items-end border-b-2 border-black mb-2 pb-1 bg-slate-100 p-2">
+                    <h6 className="font-bold text-sm">#{index + 1} - Nama: {studentData.studentName} <span className="text-xs font-normal ml-2">({studentData.className})</span></h6>
+                    <div className="text-[10px] space-x-4 font-bold uppercase">
+                      <span>Total Pelanggaran: <span className={studentData.totalPelanggaran > 0 ? "text-red-600" : ""}>{studentData.totalPelanggaran}</span></span>
+                      <span>Total Penghargaan: <span className={studentData.totalPenghargaan > 0 ? "text-green-600" : ""}>{studentData.totalPenghargaan}</span></span>
+                      <span>Status: <span className={spStatus !== '-' ? 'text-red-600' : ''}>{spStatus}</span></span>
                     </div>
-                  );
-                })}
+                  </div>
+                  
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-300 bg-slate-50">
+                        <th className="py-1 px-2 w-10">No</th>
+                        <th className="py-1 px-2 w-24">Tanggal</th>
+                        <th className="py-1 px-2">Deskripsi</th>
+                        <th className="py-1 px-2 w-16">Poin</th>
+                        <th className="py-1 px-2 w-24">Tipe</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentData.records.map((r, idx) => (
+                        <tr key={idx} className="border-b border-slate-200">
+                          <td className="py-1 px-2">{idx + 1}</td>
+                          <td className="py-1 px-2">{r.date || r.createdAt.split('T')[0]}</td>
+                          <td className="py-1 px-2 break-words text-justify pr-4">{r.description}</td>
+                          <td className="py-1 px-2 font-bold">{r.points > 0 ? `+${r.points}` : r.points}</td>
+                          <td className="py-1 px-2">{r.points > 0 ? 'Penghargaan' : 'Pelanggaran'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
+            {globalRankingDataToPrint.length === 0 && (
+               <p className="text-center italic text-slate-500 mt-10">Tidak ada data untuk dicetak pada periode/filter ini.</p>
+            )}
+          </div>
+        ) : (
+          <div>
+            {Object.keys(groupedDataToPrint).sort().map(jenjang => (
+              <div key={jenjang} className="mb-8">
+                <h4 className="text-md font-bold bg-slate-100 p-2 border border-black mb-4 uppercase">{jenjang}</h4>
+                
+                {Object.keys(groupedDataToPrint[jenjang]).sort().map(className => (
+                  <div key={className} className="mb-6 pl-4 border-l-2 border-black">
+                    <h5 className="text-sm font-bold mb-3 underline">Kelas: {className}</h5>
+                    
+                    {Object.keys(groupedDataToPrint[jenjang][className]).sort((a, b) => {
+                      const studentA = groupedDataToPrint[jenjang][className][a];
+                      const studentB = groupedDataToPrint[jenjang][className][b];
+                      
+                      if (studentB.totalPelanggaran !== studentA.totalPelanggaran) {
+                        return studentB.totalPelanggaran - studentA.totalPelanggaran;
+                      }
+                      return studentB.totalPenghargaan - studentA.totalPenghargaan;
+                    }).map(studentName => {
+                      const studentData = groupedDataToPrint[jenjang][className][studentName];
+                      let spStatus = "-";
+                      if (studentData.totalPelanggaran >= 200) spStatus = "SP 3";
+                      else if (studentData.totalPelanggaran >= 150) spStatus = "SP 2";
+                      else if (studentData.totalPelanggaran >= 50) spStatus = "SP 1";
+
+                      return (
+                        <div key={studentName} className="mb-6" style={{ pageBreakInside: 'avoid' }}>
+                          <div className="flex justify-between items-end border-b-2 border-black mb-2 pb-1">
+                            <h6 className="font-bold text-sm">Nama: {studentName}</h6>
+                            <div className="text-[10px] space-x-4 font-bold uppercase">
+                              <span>Total Pelanggaran: <span className={studentData.totalPelanggaran > 0 ? "text-red-600" : ""}>{studentData.totalPelanggaran}</span></span>
+                              <span>Total Penghargaan: <span className={studentData.totalPenghargaan > 0 ? "text-green-600" : ""}>{studentData.totalPenghargaan}</span></span>
+                              <span>Status: <span className={spStatus !== '-' ? 'text-red-600' : ''}>{spStatus}</span></span>
+                            </div>
+                          </div>
+                          
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="border-b border-slate-300 bg-slate-50">
+                                <th className="py-1 px-2 w-10">No</th>
+                                <th className="py-1 px-2 w-24">Tanggal</th>
+                                <th className="py-1 px-2">Deskripsi</th>
+                                <th className="py-1 px-2 w-16">Poin</th>
+                                <th className="py-1 px-2 w-24">Tipe</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {studentData.records.map((r, idx) => (
+                                <tr key={idx} className="border-b border-slate-200">
+                                  <td className="py-1 px-2">{idx + 1}</td>
+                                  <td className="py-1 px-2">{r.date || r.createdAt.split('T')[0]}</td>
+                                  <td className="py-1 px-2 break-words text-justify pr-4">{r.description}</td>
+                                  <td className="py-1 px-2 font-bold">{r.points > 0 ? `+${r.points}` : r.points}</td>
+                                  <td className="py-1 px-2">{r.points > 0 ? 'Penghargaan' : 'Pelanggaran'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             ))}
+            
+            {Object.keys(groupedDataToPrint).length === 0 && (
+               <p className="text-center italic text-slate-500 mt-10">Tidak ada data untuk dicetak pada periode/filter ini.</p>
+            )}
           </div>
-        ))}
-        
-        {Object.keys(groupedDataToPrint).length === 0 && (
-           <p className="text-center italic text-slate-500 mt-10">Tidak ada data untuk dicetak pada periode/filter ini.</p>
         )}
       </div>
 
