@@ -212,7 +212,7 @@ export default function RekapitulasiLanjutan() {
              <label className="text-[10px] font-semibold text-slate-300 uppercase mb-1 block">Kelas</label>
              <select value={selectedClass} onChange={e=>setSelectedClass(e.target.value)} className="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-2 text-sm outline-none text-white focus:border-primary-500 transition-colors appearance-none">
                <option value="all">Semua Kelas</option>
-               {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+               {classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
              </select>
            </div>
            <div className="flex-1 min-w-[120px]">
