@@ -15,6 +15,7 @@ export default function Home() {
   const [topAbsences, setTopAbsences] = useState([]);
   const [spStudents, setSpStudents] = useState([]);
   const [studentIndicators, setStudentIndicators] = useState({});
+  const [studentGenders, setStudentGenders] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,13 +36,16 @@ export default function Home() {
       
       const allStudents = await getStudents();
       const indicatorMap = {};
+      const genderMap = {};
       allStudents.forEach(s => {
+          genderMap[s.id] = s.gender;
           const hpMerah = Math.abs(s.poinPelanggaran || 0);
           if (hpMerah >= 200) indicatorMap[s.id] = '⚠️⚠️⚠️';
           else if (hpMerah >= 150) indicatorMap[s.id] = '⚠️⚠️';
           else if (hpMerah >= 50) indicatorMap[s.id] = '⚠️';
       });
       setStudentIndicators(indicatorMap);
+      setStudentGenders(genderMap);
 
       // Fetch ALL records for the period to avoid complex composite index requirements
       const qRecords = query(
@@ -194,7 +198,7 @@ export default function Home() {
                                         {spLevel}
                                     </div>
                                     <div>
-                                        <p className="font-bold text-red-900 leading-tight">{student.name}</p>
+                                        <p className={`font-bold leading-tight ${student.gender === 'Wanita' ? 'text-pink-600' : student.gender === 'Pria' ? 'text-blue-600' : 'text-red-900'}`}>{student.name}</p>
                                         <p className="text-[10px] text-red-700 font-medium">{student.classId} • {hpMerah} Poin</p>
                                     </div>
                                 </div>
@@ -246,8 +250,8 @@ export default function Home() {
                         else if (hpMerah >= 50) cardBg = 'bg-orange-50 hover:bg-orange-100 border-orange-200';
                         
                         let nameColor = 'text-slate-800';
-                        if (item.gender === 'Wanita') nameColor = 'text-pink-600';
-                        else if (item.gender === 'Pria') nameColor = 'text-blue-600';
+                        if (studentGenders[item.id] === 'Wanita') nameColor = 'text-pink-600';
+                        else if (studentGenders[item.id] === 'Pria') nameColor = 'text-blue-600';
 
                         return (
                         <Link href={`/siswa/detail?id=${item.id}`} key={i} className={`relative p-3 border-b border-slate-50 last:border-0 transition-colors group overflow-hidden block ${cardBg}`}>
@@ -289,8 +293,8 @@ export default function Home() {
                         const percentage = Math.min(100, Math.max(0, (item.points / maxPoints) * 100));
                         
                         let nameColor = 'text-slate-800';
-                        if (item.gender === 'Wanita') nameColor = 'text-pink-600';
-                        else if (item.gender === 'Pria') nameColor = 'text-blue-600';
+                        if (studentGenders[item.id] === 'Wanita') nameColor = 'text-pink-600';
+                        else if (studentGenders[item.id] === 'Pria') nameColor = 'text-blue-600';
 
                         return (
                         <Link href={`/siswa/detail?id=${item.id}`} key={i} className="relative p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors group overflow-hidden block">
