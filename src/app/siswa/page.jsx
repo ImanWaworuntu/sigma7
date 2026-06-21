@@ -37,8 +37,9 @@ export default function SiswaPage() {
                         (s.classId || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     let matchFilter = true;
-    if (filter === 'Bermasalah') matchFilter = s.poinNet < 0;
-    else if (filter === 'Berprestasi') matchFilter = s.poinNet > 0;
+    if (filter === 'Bermasalah') matchFilter = (s.poinPelanggaran || 0) < 0;
+    else if (filter === 'Berprestasi') matchFilter = (s.poinPenghargaan || 0) > 0;
+    else if (filter === 'Perlu SP') matchFilter = (s.poinPelanggaran || 0) <= -50;
     else if (filter === 'Kelas X') matchFilter = (s.classId || '').startsWith('X') && !(s.classId || '').startsWith('XI');
     else if (filter === 'Kelas XI') matchFilter = (s.classId || '').startsWith('XI') && !(s.classId || '').startsWith('XII');
     else if (filter === 'Kelas XII') matchFilter = (s.classId || '').startsWith('XII');
@@ -83,7 +84,7 @@ export default function SiswaPage() {
         
         {/* Filter chips */}
         <div className="flex gap-2 mt-4 overflow-x-auto pb-1 no-scrollbar">
-          {['Semua', 'Bermasalah', 'Berprestasi', 'Kelas X', 'Kelas XI', 'Kelas XII'].map(f => (
+          {['Semua', 'Bermasalah', 'Perlu SP', 'Berprestasi', 'Kelas X', 'Kelas XI', 'Kelas XII'].map(f => (
             <button 
               key={f} 
               onClick={() => setFilter(f)}
@@ -105,14 +106,18 @@ export default function SiswaPage() {
             {filteredStudents.length === 0 && <div className="text-center text-slate-500 mt-10">Tidak ada data.</div>}
             
             {filteredStudents.map(student => {
-              const pts = student.poinNet || 0;
-              const statusColor = pts > 0 ? 'bg-reward-100 text-reward-600' : 
-                                  pts < -50 ? 'bg-violation-100 text-violation-600' : 
-                                  pts < 0 ? 'bg-warning-100 text-warning-600' : 'bg-slate-100 text-slate-500';
-              const ptsColor = pts > 0 ? 'text-reward-500' : pts < -50 ? 'text-violation-600' : pts < 0 ? 'text-warning-500' : 'text-slate-500';
+              const pPelanggaran = student.poinPelanggaran || 0;
+              const pPenghargaan = student.poinPenghargaan || 0;
+              
+              const hpMerah = Math.abs(pPelanggaran);
+              const hpHijau = pPenghargaan;
+
+              const statusColor = pPelanggaran < -50 ? 'bg-violation-100 text-violation-600' : 
+                                  pPenghargaan > 0 ? 'bg-reward-100 text-reward-600' : 
+                                  'bg-slate-100 text-slate-500';
               
               return (
-                <div key={student.id} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center justify-between">
+                <div key={student.id} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all">
                   <div className="flex items-center gap-3">
                     <div className="relative group">
                       <div className={`h-12 w-12 rounded-full flex items-center justify-center font-bold text-lg ${statusColor}`}>
@@ -124,8 +129,22 @@ export default function SiswaPage() {
                       <p className="text-xs text-slate-500 mt-1">{student.classId}</p>
                     </div>
                   </div>
-                  <div className={`font-bold text-lg ${ptsColor}`}>
-                    {pts > 0 ? '+' : ''}{pts}
+                  <div className="flex flex-col items-end w-24">
+                    <div className="w-full flex items-center justify-between text-[10px] font-bold text-red-600 mb-0.5">
+                      <span>HP Merah</span>
+                      <span>{hpMerah}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex mb-2" title={`${hpMerah} HP Merah`}>
+                      <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${Math.min(100, (hpMerah/200)*100)}%` }}></div>
+                    </div>
+                    
+                    <div className="w-full flex items-center justify-between text-[10px] font-bold text-green-600 mb-0.5">
+                      <span>HP Hijau</span>
+                      <span>{hpHijau}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex" title={`${hpHijau} HP Hijau`}>
+                      <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${Math.min(100, (hpHijau/200)*100)}%` }}></div>
+                    </div>
                   </div>
                 </div>
               );

@@ -15,7 +15,8 @@ function SiswaProfileContent() {
     name: 'Ahmad Fulan',
     class: 'XII.1',
     nisn: '0012345678',
-    points: 85,
+    poinPelanggaran: -10,
+    poinPenghargaan: 95,
     status: 'safe'
   };
 
@@ -24,6 +25,24 @@ function SiswaProfileContent() {
     { id: 2, date: '2023-10-10', type: 'violation', desc: 'Terlambat datang ke sekolah', points: -10 },
     { id: 3, date: '2023-09-28', type: 'reward', desc: 'Hafalan Al-Quran 1 Juz', points: 45 },
   ];
+
+  // Hitung HP dari points secara terpisah
+  const hpMerah = Math.abs(student.poinPelanggaran || 0);
+  const hpHijau = student.poinPenghargaan || 0;
+
+  let bannerText = null;
+  let bannerColor = '';
+
+  if (hpMerah >= 200) {
+    bannerText = 'Siswa telah mencapai batas maksimal Pelanggaran. SP 3 segera diproses!';
+    bannerColor = 'bg-red-100 text-red-700 border-red-200';
+  } else if (hpMerah >= 150) {
+    bannerText = 'Pelanggaran Kritis (≥150). Siswa memerlukan SP 2.';
+    bannerColor = 'bg-orange-100 text-orange-700 border-orange-200';
+  } else if (hpMerah >= 50) {
+    bannerText = 'Pelanggaran Menumpuk (≥50). Siswa memerlukan SP 1.';
+    bannerColor = 'bg-yellow-100 text-yellow-700 border-yellow-200';
+  }
 
   return (
     <main className="flex-1 bg-slate-50 pb-20 min-h-screen flex flex-col">
@@ -52,6 +71,13 @@ function SiswaProfileContent() {
           <p className="text-sm">Sistem Siswa Integrasi & Garda Moral (SIGMA 7)</p>
         </div>
 
+        {/* Warning Banner */}
+        {bannerText && (
+          <div className={`rounded-xl p-4 mb-6 border font-bold text-sm text-center shadow-sm print:hidden ${bannerColor} animate-pulse`}>
+            ⚠️ {bannerText}
+          </div>
+        )}
+
         {/* Profile Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6 flex flex-col items-center text-center relative print:shadow-none print:border-slate-300">
           <div className="h-24 w-24 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-4xl font-bold mb-4">
@@ -60,11 +86,36 @@ function SiswaProfileContent() {
           <h2 className="text-2xl font-bold text-slate-800">{student.name}</h2>
           <p className="text-slate-500 font-medium mb-4">Kelas {student.class} • NISN: {student.nisn}</p>
           
-          <div className="bg-slate-50 w-full rounded-xl p-4 border border-slate-100 flex justify-between items-center">
-            <span className="font-semibold text-slate-600">Total Poin Saat Ini:</span>
-            <span className={`text-2xl font-black ${student.points >= 0 ? 'text-reward-600' : 'text-violation-600'}`}>
-              {student.points > 0 ? '+' : ''}{student.points}
-            </span>
+          <div className="flex w-full gap-3 mb-6">
+            <div className="bg-red-50 flex-1 rounded-xl p-3 border border-red-100">
+              <div className="text-red-600 text-[10px] font-bold mb-1 uppercase">HP Pelanggaran</div>
+              <div className="text-2xl font-black text-red-700">{hpMerah}/200</div>
+            </div>
+            <div className="bg-green-50 flex-1 rounded-xl p-3 border border-green-100">
+              <div className="text-green-600 text-[10px] font-bold mb-1 uppercase">HP Penghargaan</div>
+              <div className="text-2xl font-black text-green-700">{hpHijau}</div>
+            </div>
+          </div>
+
+          <div className="w-full space-y-4 text-left">
+            <div>
+              <div className="flex justify-between text-xs font-bold mb-1.5 text-red-600">
+                <span>Bar HP Merah</span>
+                <span>{((hpMerah/200)*100).toFixed(0)}% (Batas 200)</span>
+              </div>
+              <div className="w-full h-3 bg-red-100 rounded-full overflow-hidden shadow-inner">
+                <div className="h-full bg-red-500 transition-all duration-1000 ease-out" style={{ width: `${Math.min(100, (hpMerah/200)*100)}%` }}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-xs font-bold mb-1.5 text-green-600">
+                <span>Bar HP Hijau</span>
+                <span>+{hpHijau} Poin</span>
+              </div>
+              <div className="w-full h-3 bg-green-100 rounded-full overflow-hidden shadow-inner">
+                <div className="h-full bg-green-500 transition-all duration-1000 ease-out" style={{ width: `${Math.min(100, (hpHijau/200)*100)}%` }}></div>
+              </div>
+            </div>
           </div>
         </div>
 

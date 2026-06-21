@@ -83,7 +83,8 @@ export const getStudents = async (classId = null) => {
 export const addStudent = async (studentData) => {
   return await addDoc(collection(db, STUDENTS_COLLECTION), {
     ...studentData,
-    poinNet: 0,
+    poinPelanggaran: 0,
+    poinPenghargaan: 0,
     createdAt: new Date().toISOString()
   });
 };
@@ -127,20 +128,26 @@ export const addRecord = async (recordData) => {
   const studentRef = doc(db, STUDENTS_COLLECTION, recordData.studentId);
   const studentSnap = await getDoc(studentRef);
   if (studentSnap.exists()) {
-    const currentPoints = studentSnap.data().poinNet || 0;
-    const newPoints = currentPoints + (recordData.points || 0);
-    await updateDoc(studentRef, { poinNet: newPoints });
+    const data = studentSnap.data();
+    if ((recordData.points || 0) < 0) {
+      const currentPoints = data.poinPelanggaran || 0;
+      await updateDoc(studentRef, { poinPelanggaran: currentPoints + (recordData.points || 0) });
+    } else {
+      const currentPoints = data.poinPenghargaan || 0;
+      await updateDoc(studentRef, { poinPenghargaan: currentPoints + (recordData.points || 0) });
+    }
   }
   return record;
 };
 
 export const getTopRecords = async (type = 'pelanggaran', limitCount = 5) => {
   const typeFilter = type === 'pelanggaran' ? '<' : '>';
-  // Simple approximation. In real life you'd use orderBy points
+  const fieldName = type === 'pelanggaran' ? 'poinPelanggaran' : 'poinPenghargaan';
+  
   const q = query(
     collection(db, STUDENTS_COLLECTION), 
-    where('poinNet', typeFilter, 0),
-    orderBy('poinNet', type === 'pelanggaran' ? 'asc' : 'desc'), 
+    where(fieldName, typeFilter, 0),
+    orderBy(fieldName, type === 'pelanggaran' ? 'asc' : 'desc'), 
     limit(limitCount)
   );
   const snapshot = await getDocs(q);

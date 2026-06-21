@@ -12,6 +12,7 @@ export default function Home() {
   const [topPelanggaran, setTopPelanggaran] = useState([]);
   const [topPrestasi, setTopPrestasi] = useState([]);
   const [topAbsences, setTopAbsences] = useState([]);
+  const [spStudents, setSpStudents] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -74,9 +75,19 @@ export default function Home() {
       });
       const arrAbsence = Object.values(absMap).sort((a,b) => b.count - a.count).slice(0, 5);
 
+      // Fetch SP Students (HP Merah <= 150 means poinPelanggaran <= -50)
+      const qSP = query(
+        collection(db, 'students'),
+        where('poinPelanggaran', '<=', -50),
+        orderBy('poinPelanggaran', 'asc')
+      );
+      const snapSP = await getDocs(qSP);
+      const arrSP = snapSP.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
       setTopPelanggaran(arrPelanggaran);
       setTopPrestasi(arrPrestasi);
       setTopAbsences(arrAbsence);
+      setSpStudents(arrSP);
     } catch (error) {
       console.error("Error fetching top records:", error);
     }
@@ -139,8 +150,43 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Top 5 Lists */}
+      {/* Top 5 Lists & SP Warnings */}
       <div className="px-6 mt-8 pb-6 flex flex-col gap-6">
+
+        {/* Peringatan SP Section */}
+        {!loading && spStudents.length > 0 && (
+            <div className="mb-2">
+                <h2 className="text-lg font-bold text-red-600 mb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    Siswa Perlu SP
+                </h2>
+                <div className="flex flex-col gap-3">
+                    {spStudents.map((student) => {
+                        const hpMerah = Math.abs(student.poinPelanggaran || 0);
+                        let spLevel = 'SP 1';
+                        if (hpMerah >= 200) spLevel = 'SP 3';
+                        else if (hpMerah >= 150) spLevel = 'SP 2';
+
+                        return (
+                            <Link href={`/siswa/detail?id=${student.id}`} key={student.id} className="bg-red-50 border border-red-200 rounded-xl p-3 flex justify-between items-center shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 bg-red-100 text-red-600 font-bold rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        {spLevel}
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-red-900 leading-tight">{student.name}</p>
+                                        <p className="text-[10px] text-red-700 font-medium">{student.classId} • {hpMerah} Poin</p>
+                                    </div>
+                                </div>
+                                <div className="bg-red-600 text-white rounded-full p-1.5 shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                </div>
+                            </Link>
+                        );
+                    })}
+                </div>
+            </div>
+        )}
         
         <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold text-slate-800">Papan Peringkat</h2>
