@@ -88,11 +88,11 @@ function SiswaProfileContent() {
           
           <div className="flex w-full gap-3 mb-6">
             <div className="bg-red-50 flex-1 rounded-xl p-3 border border-red-100">
-              <div className="text-red-600 text-[10px] font-bold mb-1 uppercase">HP Pelanggaran</div>
+              <div className="text-red-600 text-[10px] font-bold mb-1 uppercase">Poin Pelanggaran</div>
               <div className="text-2xl font-black text-red-700">{hpMerah}/200</div>
             </div>
             <div className="bg-green-50 flex-1 rounded-xl p-3 border border-green-100">
-              <div className="text-green-600 text-[10px] font-bold mb-1 uppercase">HP Penghargaan</div>
+              <div className="text-green-600 text-[10px] font-bold mb-1 uppercase">Poin Penghargaan</div>
               <div className="text-2xl font-black text-green-700">{hpHijau}</div>
             </div>
           </div>
@@ -100,7 +100,7 @@ function SiswaProfileContent() {
           <div className="w-full space-y-4 text-left">
             <div>
               <div className="flex justify-between text-xs font-bold mb-1.5 text-red-600">
-                <span>Bar HP Merah</span>
+                <span>Bar Pelanggaran</span>
                 <span>{((hpMerah/200)*100).toFixed(0)}% (Batas 200)</span>
               </div>
               <div className="w-full h-3 bg-red-100 rounded-full overflow-hidden shadow-inner">
@@ -109,7 +109,7 @@ function SiswaProfileContent() {
             </div>
             <div>
               <div className="flex justify-between text-xs font-bold mb-1.5 text-green-600">
-                <span>Bar HP Hijau</span>
+                <span>Bar Penghargaan</span>
                 <span>+{hpHijau} Poin</span>
               </div>
               <div className="w-full h-3 bg-green-100 rounded-full overflow-hidden shadow-inner">

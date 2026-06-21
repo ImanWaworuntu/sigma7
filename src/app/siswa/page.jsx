@@ -131,18 +131,17 @@ export default function SiswaPage() {
                   </div>
                   <div className="flex flex-col items-end w-24">
                     <div className="w-full flex items-center justify-between text-[10px] font-bold text-red-600 mb-0.5">
-                      <span>HP Merah</span>
+                      <span>Pelanggaran</span>
                       <span>{hpMerah}</span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex mb-2" title={`${hpMerah} HP Merah`}>
+                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex mb-2" title={`${hpMerah} Poin Pelanggaran`}>
                       <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${Math.min(100, (hpMerah/200)*100)}%` }}></div>
                     </div>
-                    
                     <div className="w-full flex items-center justify-between text-[10px] font-bold text-green-600 mb-0.5">
-                      <span>HP Hijau</span>
+                      <span>Penghargaan</span>
                       <span>{hpHijau}</span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex" title={`${hpHijau} HP Hijau`}>
+                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex" title={`${hpHijau} Poin Penghargaan`}>
                       <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${Math.min(100, (hpHijau/200)*100)}%` }}></div>
                     </div>
                   </div>
