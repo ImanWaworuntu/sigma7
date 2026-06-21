@@ -22,12 +22,10 @@ export default function MasterData() {
   const [rulePoints, setRulePoints] = useState('');
   const [ruleCategory, setRuleCategory] = useState('Ringan');
 
-  // Recap State
+  // Recap Navigation State
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
-  const [recapTopStudents, setRecapTopStudents] = useState([]);
-  const [recapTopClasses, setRecapTopClasses] = useState([]);
-  const [recapLoading, setRecapLoading] = useState(false);
+
 
   useEffect(() => {
     fetchInitData();
@@ -147,51 +145,6 @@ export default function MasterData() {
     }
   };
 
-  // --- RECAP ---
-  const handleGenerateRecap = async () => {
-    setRecapLoading(true);
-    try {
-      const allRecords = await getRecords({ startDate, endDate });
-      
-      const studentMap = {};
-      const classMap = {};
-
-      allRecords.forEach(r => {
-        // Student Aggregation
-        if (!studentMap[r.studentId]) {
-          studentMap[r.studentId] = { name: r.studentName, className: r.className, points: 0, violationCount: 0, rewardCount: 0 };
-        }
-        studentMap[r.studentId].points += r.points;
-        if (r.points < 0) studentMap[r.studentId].violationCount++;
-        else studentMap[r.studentId].rewardCount++;
-
-        // Class Aggregation
-        if (!classMap[r.classId]) {
-          classMap[r.classId] = { className: r.className, points: 0, violationCount: 0, rewardCount: 0, uniqueViolators: new Set() };
-        }
-        classMap[r.classId].points += r.points;
-        if (r.points < 0) {
-            classMap[r.classId].violationCount++;
-            classMap[r.classId].uniqueViolators.add(r.studentId);
-        } else {
-            classMap[r.classId].rewardCount++;
-        }
-      });
-
-      const topStudents = Object.values(studentMap).sort((a,b) => a.points - b.points).slice(0, 10);
-      const topClasses = Object.values(classMap).map(c => ({
-          ...c,
-          uniqueViolatorCount: c.uniqueViolators.size
-      })).sort((a,b) => a.points - b.points).slice(0, 10);
-
-      setRecapTopStudents(topStudents);
-      setRecapTopClasses(topClasses);
-      toast.success("Rekap berhasil dibuat");
-    } catch (error) {
-      toast.error("Gagal membuat rekap");
-    }
-    setRecapLoading(false);
-  };
 
   return (
     <main className="flex-1 overflow-y-auto bg-slate-50 pb-20">
@@ -207,51 +160,19 @@ export default function MasterData() {
 
       <div className="px-4 mt-6 space-y-6">
         
-        {/* REKAPITULASI KHUSUS */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <h2 className="font-bold text-slate-800 mb-3 border-b pb-2 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              Rekapitulasi Cepat
-            </h2>
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <div>
-                <label className="text-[10px] font-semibold text-slate-500 uppercase">Mulai</label>
-                <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="w-full border rounded-lg p-2 text-sm outline-none bg-slate-50"/>
-              </div>
-              <div>
-                <label className="text-[10px] font-semibold text-slate-500 uppercase">Sampai</label>
-                <input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="w-full border rounded-lg p-2 text-sm outline-none bg-slate-50"/>
-              </div>
+        {/* REKAPITULASI MENU */}
+        <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-6 rounded-xl shadow-md text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h2 className="font-bold text-lg mb-1 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Dashboard Rekapitulasi Lanjutan
+              </h2>
+              <p className="text-xs text-slate-300">Lihat diagram analitik mendalam, tren pelanggaran per kelas, serta tabel track record komprehensif seluruh sekolah.</p>
             </div>
-            <button onClick={handleGenerateRecap} disabled={recapLoading} className="w-full bg-slate-800 text-white font-bold py-2 rounded-lg text-sm mb-4">
-              {recapLoading ? 'Menghitung...' : 'Buat Rekap'}
-            </button>
-
-            {recapTopStudents.length > 0 && (
-              <div className="space-y-4 border-t pt-4">
-                <div>
-                  <h3 className="text-xs font-bold text-slate-700 bg-slate-100 p-2 rounded mb-2">Paling Sering Melanggar (Top 10 Siswa)</h3>
-                  {recapTopStudents.map((s, i) => (
-                    <div key={i} className="flex justify-between items-center text-xs border-b border-slate-50 py-1">
-                      <span>{i+1}. {s.name} ({s.className})</span>
-                      <span className="text-red-600 font-bold">{s.points} Pts</span>
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-slate-700 bg-slate-100 p-2 rounded mb-2">Kelas Paling Bermasalah (Top 10 Kelas)</h3>
-                  {recapTopClasses.map((c, i) => (
-                    <div key={i} className="flex justify-between items-center text-xs border-b border-slate-50 py-1">
-                      <div>
-                        <span>{i+1}. {c.className}</span>
-                        <p className="text-[10px] text-slate-500 mt-0.5">{c.uniqueViolatorCount} siswa melanggar</p>
-                      </div>
-                      <span className="text-red-600 font-bold">{c.points} Pts</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <Link href="/master/rekapitulasi" className="bg-primary-600 hover:bg-primary-500 text-white font-bold py-3 px-6 rounded-lg text-sm whitespace-nowrap shadow-sm hover:shadow-lg transition-all active:scale-95 flex items-center gap-2">
+              Buka Dashboard Lanjutan
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+            </Link>
         </div>
 
         {/* MANAJEMEN ATURAN */}
