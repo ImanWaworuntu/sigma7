@@ -2,8 +2,6 @@
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import { getClasses, getRecords } from '@/lib/dataService';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b'];
@@ -109,25 +107,8 @@ export default function RekapitulasiLanjutan() {
     return Object.values(map).sort((a,b) => b.value - a.value).slice(0, 8); // Top 8
   }, [filteredRecords]);
 
-  // --- EXPORT PDF ---
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    
-    // Header
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text("Laporan Rekapitulasi Kedisiplinan SIGMA 7", 14, 20);
-    
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Periode: ${startDate} s/d ${endDate}`, 14, 27);
-    doc.text(`Filter Kelas: ${selectedClass === 'all' ? 'Semua Kelas' : classes.find(c=>c.id===selectedClass)?.name || selectedClass}`, 14, 32);
-    doc.text(`Filter Jenjang: ${appliedJenjang === 'all' ? 'Semua Jenjang' : 'Kelas ' + appliedJenjang}`, 14, 37);
-    doc.text(`Tipe Data: ${appliedType === 'all' ? 'Pelanggaran & Penghargaan' : appliedType === 'violation' ? 'Hanya Pelanggaran' : 'Hanya Penghargaan'}`, 14, 42);
-
-    let currentY = 50;
-
-    // Grouping: Jenjang -> Class -> Student
+  // --- GROUPED DATA FOR PRINTING ---
+  const groupedDataToPrint = useMemo(() => {
     const groupedData = {}; // { jenjang: { className: { studentName: { points, records: [] } } } }
 
     filteredRecords.forEach(r => {
@@ -151,85 +132,13 @@ export default function RekapitulasiLanjutan() {
       if (r.points < 0) groupedData[jenjang][r.className][r.studentName].totalPelanggaran += Math.abs(r.points);
       else groupedData[jenjang][r.className][r.studentName].totalPenghargaan += r.points;
     });
-
-    const jenjangKeys = Object.keys(groupedData).sort();
-
-    jenjangKeys.forEach(jenjang => {
-      // Jenjang Header
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(34, 197, 94); // green
-      doc.text(jenjang, 14, currentY);
-      currentY += 8;
-
-      const classKeys = Object.keys(groupedData[jenjang]).sort();
-      classKeys.forEach(className => {
-        // Class Header
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(59, 130, 246); // blue
-        doc.text(`Kelas: ${className}`, 14, currentY);
-        currentY += 6;
-
-        const studentKeys = Object.keys(groupedData[jenjang][className]).sort();
-        
-        studentKeys.forEach(studentName => {
-          const studentData = groupedData[jenjang][className][studentName];
-          
-          // Determine SP
-          let spStatus = "-";
-          if (studentData.totalPelanggaran >= 200) spStatus = "SP 3 (>= 200 Poin)";
-          else if (studentData.totalPelanggaran >= 150) spStatus = "SP 2 (>= 150 Poin)";
-          else if (studentData.totalPelanggaran >= 50) spStatus = "SP 1 (>= 50 Poin)";
-
-          const tableData = studentData.records.map((r, idx) => [
-            idx + 1,
-            r.date || r.createdAt.split('T')[0],
-            r.description,
-            r.points > 0 ? `+${r.points}` : r.points,
-            r.points > 0 ? 'Penghargaan' : 'Pelanggaran'
-          ]);
-
-          autoTable(doc, {
-            startY: currentY,
-            head: [[`Siswa: ${studentName}`, `Total Pelanggaran: ${studentData.totalPelanggaran}`, `Total Penghargaan: ${studentData.totalPenghargaan}`, `Status: ${spStatus}`, '']],
-            body: tableData,
-            theme: 'grid',
-            headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold' },
-            styles: { fontSize: 8 },
-            columnStyles: {
-              0: { cellWidth: 10 },
-              1: { cellWidth: 25 },
-              2: { cellWidth: 'auto' },
-              3: { cellWidth: 20 },
-              4: { cellWidth: 30 }
-            },
-            margin: { left: 14, right: 14 }
-          });
-
-          currentY = doc.lastAutoTable.finalY + 8;
-
-          // Page break if too low
-          if (currentY > 270) {
-            doc.addPage();
-            currentY = 20;
-          }
-        });
-        currentY += 4;
-      });
-      currentY += 6;
-      if (currentY > 270) {
-        doc.addPage();
-        currentY = 20;
-      }
-    });
-
-    doc.save(`Rekapitulasi_Sigma7_${startDate}_to_${endDate}.pdf`);
-  };
+    return groupedData;
+  }, [filteredRecords]);
 
   return (
-    <main className="flex-1 overflow-y-auto bg-slate-50 pb-20">
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-b-3xl px-6 pt-10 pb-8 shadow-md sticky top-0 z-50">
+    <main className="flex-1 overflow-y-auto bg-slate-50 pb-20 print:bg-white print:overflow-visible print:pb-0">
+      <div className="print:hidden">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-b-3xl px-6 pt-10 pb-8 shadow-md sticky top-0 z-50">
         <div className="flex items-center gap-3 mb-4">
             <Link href="/master" className="bg-white/20 hover:bg-white/30 transition-colors p-2 rounded-full backdrop-blur-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -277,9 +186,9 @@ export default function RekapitulasiLanjutan() {
            <button onClick={handleApplyFilters} className="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 h-[38px] flex items-center justify-center min-w-[100px]">
              {loading ? 'Memuat...' : 'Terapkan'}
            </button>
-           <button onClick={handleExportPDF} className="bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 h-[38px] flex items-center justify-center min-w-[140px] gap-2 ml-auto">
+           <button onClick={() => window.print()} className="bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 h-[38px] flex items-center justify-center min-w-[140px] gap-2 ml-auto">
              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-             Cetak PDF
+             Cetak Laporan
            </button>
         </div>
       </div>
@@ -423,6 +332,83 @@ export default function RekapitulasiLanjutan() {
         </div>
 
       </div>
+      </div>
+
+      {/* HIDDEN PRINT LAYOUT */}
+      <div className="hidden print:block w-full bg-white text-black text-sm p-4">
+        {/* KOP Surat Default SMAN 7 Makassar */}
+        <div className="flex items-center justify-center border-b-4 border-double border-black pb-4 mb-6">
+          <div className="text-center">
+            <h1 className="text-xl font-black uppercase tracking-wider">Pemerintah Provinsi Sulawesi Selatan</h1>
+            <h2 className="text-2xl font-black uppercase tracking-widest mt-1">SMA Negeri 7 Makassar</h2>
+            <p className="text-xs mt-2">Jl. Perintis Kemerdekaan, Tamalanrea, Kota Makassar, Sulawesi Selatan</p>
+          </div>
+        </div>
+
+        <h3 className="text-lg font-bold text-center mb-2 uppercase underline">Laporan Rekapitulasi Kedisiplinan</h3>
+        <p className="text-center mb-6 text-xs">Periode: {startDate} s/d {endDate} | Tipe: {appliedType === 'all' ? 'Semua' : appliedType === 'violation' ? 'Pelanggaran' : 'Penghargaan'} | Jenjang: {appliedJenjang === 'all' ? 'Semua' : 'Kelas ' + appliedJenjang}</p>
+
+        {Object.keys(groupedDataToPrint).sort().map(jenjang => (
+          <div key={jenjang} className="mb-8">
+            <h4 className="text-md font-bold bg-slate-100 p-2 border border-black mb-4 uppercase">{jenjang}</h4>
+            
+            {Object.keys(groupedDataToPrint[jenjang]).sort().map(className => (
+              <div key={className} className="mb-6 pl-4 border-l-2 border-black">
+                <h5 className="text-sm font-bold mb-3 underline">Kelas: {className}</h5>
+                
+                {Object.keys(groupedDataToPrint[jenjang][className]).sort().map(studentName => {
+                  const studentData = groupedDataToPrint[jenjang][className][studentName];
+                  let spStatus = "-";
+                  if (studentData.totalPelanggaran >= 200) spStatus = "SP 3";
+                  else if (studentData.totalPelanggaran >= 150) spStatus = "SP 2";
+                  else if (studentData.totalPelanggaran >= 50) spStatus = "SP 1";
+
+                  return (
+                    <div key={studentName} className="mb-6" style={{ pageBreakInside: 'avoid' }}>
+                      <div className="flex justify-between items-end border-b-2 border-black mb-2 pb-1">
+                        <h6 className="font-bold text-sm">Nama: {studentName}</h6>
+                        <div className="text-[10px] space-x-4 font-bold uppercase">
+                          <span>Total Pelanggaran: <span className={studentData.totalPelanggaran > 0 ? "text-red-600" : ""}>{studentData.totalPelanggaran}</span></span>
+                          <span>Total Penghargaan: <span className={studentData.totalPenghargaan > 0 ? "text-green-600" : ""}>{studentData.totalPenghargaan}</span></span>
+                          <span>Status: <span className={spStatus !== '-' ? 'text-red-600' : ''}>{spStatus}</span></span>
+                        </div>
+                      </div>
+                      
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-300 bg-slate-50">
+                            <th className="py-1 px-2 w-10">No</th>
+                            <th className="py-1 px-2 w-24">Tanggal</th>
+                            <th className="py-1 px-2">Deskripsi</th>
+                            <th className="py-1 px-2 w-16">Poin</th>
+                            <th className="py-1 px-2 w-24">Tipe</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {studentData.records.map((r, idx) => (
+                            <tr key={idx} className="border-b border-slate-200">
+                              <td className="py-1 px-2">{idx + 1}</td>
+                              <td className="py-1 px-2">{r.date || r.createdAt.split('T')[0]}</td>
+                              <td className="py-1 px-2 break-words text-justify pr-4">{r.description}</td>
+                              <td className="py-1 px-2 font-bold">{r.points > 0 ? `+${r.points}` : r.points}</td>
+                              <td className="py-1 px-2">{r.points > 0 ? 'Penghargaan' : 'Pelanggaran'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        ))}
+        
+        {Object.keys(groupedDataToPrint).length === 0 && (
+           <p className="text-center italic text-slate-500 mt-10">Tidak ada data untuk dicetak pada periode/filter ini.</p>
+        )}
+      </div>
+
     </main>
   );
 }
