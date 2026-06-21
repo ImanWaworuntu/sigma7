@@ -1,6 +1,8 @@
 "use client"
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/AuthContext';
 import { 
   getRules, addRule, deleteRule, 
   getClasses, addClass, deleteClass, 
@@ -11,6 +13,9 @@ import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { toast, Toaster } from 'react-hot-toast';
 
 export default function MasterData() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+  
   const [classes, setClasses] = useState([]);
   const [newClassName, setNewClassName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -30,8 +35,12 @@ export default function MasterData() {
 
 
   useEffect(() => {
-    fetchInitData();
-  }, []);
+    if (!authLoading && user?.role !== 'admin') {
+      router.replace('/');
+    } else if (!authLoading && user?.role === 'admin') {
+      fetchInitData();
+    }
+  }, [user, authLoading, router]);
 
   const fetchInitData = async () => {
     setLoading(true);

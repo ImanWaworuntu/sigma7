@@ -1,12 +1,17 @@
 "use client"
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/lib/AuthContext';
 import { getClasses, getRecords } from '@/lib/dataService';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b'];
 
 export default function RekapitulasiLanjutan() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+
   const [classes, setClasses] = useState([]);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,13 +32,17 @@ export default function RekapitulasiLanjutan() {
   const [appliedFormat, setAppliedFormat] = useState('class');
 
   useEffect(() => {
-    const init = async () => {
-      const cls = await getClasses();
-      setClasses(cls);
-      handleApplyFilters();
-    };
-    init();
-  }, []);
+    if (!authLoading && user?.role !== 'admin') {
+      router.replace('/');
+    } else if (!authLoading && user?.role === 'admin') {
+      const init = async () => {
+        const cls = await getClasses();
+        setClasses(cls);
+        handleApplyFilters();
+      };
+      init();
+    }
+  }, [user, authLoading, router]);
 
   const handleApplyFilters = async () => {
     setAppliedJenjang(selectedJenjang);
