@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className="antialiased text-slate-800 bg-slate-50 min-h-screen">
         {/* Mobile App Container */}
-        <div className="max-w-md mx-auto min-h-screen bg-white shadow-xl relative overflow-hidden flex flex-col">
+        <div className="max-w-md mx-auto min-h-screen bg-slate-50/50 shadow-2xl shadow-slate-300/50 relative overflow-hidden flex flex-col">
           <ClientLayout>
             {children}
           </ClientLayout>

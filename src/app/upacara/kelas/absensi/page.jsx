@@ -19,6 +19,7 @@ function UpacaraContent() {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!classId) return;
@@ -55,6 +56,18 @@ function UpacaraContent() {
   const handleStatusChange = (studentId, status) => {
     setAttendance(prev => ({ ...prev, [studentId]: status }));
   };
+
+  const handleBulkAction = (status) => {
+    setAttendance(prev => {
+        const next = { ...prev };
+        filteredStudents.forEach(s => {
+            next[s.id] = status;
+        });
+        return next;
+    });
+  };
+
+  const filteredStudents = students.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handlePhotoUpload = async (e) => {
     const files = Array.from(e.target.files);
@@ -133,9 +146,9 @@ function UpacaraContent() {
       <Toaster position="top-center" />
       
       {/* Header */}
-      <div className="bg-blue-600 text-white rounded-b-3xl px-6 pt-10 pb-8 shadow-md sticky top-0 z-50">
-        <div className="flex justify-between items-center">
-            <Link href="/upacara" className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
+      <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white rounded-b-3xl px-6 pt-10 pb-8 shadow-lg sticky top-0 z-50 backdrop-blur-md bg-opacity-95">
+        <div className="flex justify-between items-center relative z-10">
+            <Link href="/upacara" className="bg-white/20 p-2 rounded-full backdrop-blur-sm hover:bg-white/30 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </Link>
             <div className="text-center">
@@ -144,13 +157,36 @@ function UpacaraContent() {
             </div>
             <div className="w-10"></div>
         </div>
+        
+        {/* Search Bar */}
+        <div className="mt-4 relative z-10">
+            <div className="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                <input 
+                    type="text" 
+                    placeholder="Cari nama siswa..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-blue-900/40 border border-blue-400/30 text-white placeholder-blue-200 text-sm rounded-xl pl-10 pr-4 py-2.5 outline-none focus:border-white/50 transition-colors backdrop-blur-sm"
+                />
+            </div>
+        </div>
       </div>
 
-      <div className="px-4 mt-6 space-y-3">
-        {students.map((student, idx) => {
+      {/* Bulk Actions */}
+      <div className="px-4 mt-6 flex justify-between gap-2">
+          <button onClick={() => handleBulkAction('Hadir')} className="flex-1 bg-green-100 text-green-700 hover:bg-green-200 py-2 rounded-xl text-xs font-bold transition-colors">Semua Hadir</button>
+          <button onClick={() => handleBulkAction('Alpa')} className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 py-2 rounded-xl text-xs font-bold transition-colors">Semua Alpa</button>
+      </div>
+
+      <div className="px-4 mt-4 space-y-3">
+        {filteredStudents.length === 0 && (
+            <div className="text-center text-slate-400 text-sm py-4">Siswa tidak ditemukan.</div>
+        )}
+        {filteredStudents.map((student, idx) => {
             const isAbsent = attendance[student.id] !== 'Hadir';
             return (
-                <div key={student.id} className={`bg-white p-4 rounded-xl shadow-sm border transition-all cursor-pointer ${isAbsent ? 'border-red-400 bg-red-50' : 'border-slate-100 active:scale-[0.98]'}`}>
+                <div key={student.id} className={`bg-white p-4 rounded-xl shadow-sm border transition-all duration-300 cursor-pointer ${isAbsent ? 'border-red-400 bg-red-50 hover:shadow-md hover:-translate-y-0.5' : 'border-slate-100 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]'}`}>
                     <div className="flex gap-3 items-center" onClick={() => handleStatusChange(student.id, isAbsent ? 'Hadir' : 'Alpa')}>
                         <span className={`font-bold text-sm w-5 ${isAbsent ? 'text-red-500' : 'text-slate-400'}`}>{idx+1}.</span>
                         <span className={`font-semibold flex-1 ${isAbsent ? 'text-red-900' : 'text-slate-800'}`}>{student.name}</span>
