@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import { getClasses, getRecords } from '@/lib/dataService';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
@@ -23,16 +23,21 @@ export default function RekapitulasiLanjutan() {
   const [selectedJenjang, setSelectedJenjang] = useState('all');
   const [selectedType, setSelectedType] = useState('all'); // 'all', 'violation', 'reward'
 
+  const [appliedJenjang, setAppliedJenjang] = useState('all');
+  const [appliedType, setAppliedType] = useState('all');
+
   useEffect(() => {
     const init = async () => {
       const cls = await getClasses();
       setClasses(cls);
-      fetchData();
+      handleApplyFilters();
     };
     init();
   }, []);
 
-  const fetchData = async () => {
+  const handleApplyFilters = async () => {
+    setAppliedJenjang(selectedJenjang);
+    setAppliedType(selectedType);
     setLoading(true);
     try {
       const recs = await getRecords({ startDate, endDate, classId: selectedClass === 'all' ? null : selectedClass });
@@ -47,19 +52,19 @@ export default function RekapitulasiLanjutan() {
   const filteredRecords = useMemo(() => {
     return records.filter(r => {
       // Filter by Type
-      if (selectedType === 'violation' && r.points > 0) return false;
-      if (selectedType === 'reward' && r.points < 0) return false;
+      if (appliedType === 'violation' && r.points > 0) return false;
+      if (appliedType === 'reward' && r.points < 0) return false;
       
       // Filter by Jenjang
-      if (selectedJenjang !== 'all') {
+      if (appliedJenjang !== 'all') {
         const className = r.className || '';
-        if (selectedJenjang === 'X' && !className.startsWith('X.')) return false;
-        if (selectedJenjang === 'XI' && !className.startsWith('XI.')) return false;
-        if (selectedJenjang === 'XII' && !className.startsWith('XII.')) return false;
+        if (appliedJenjang === 'X' && !className.startsWith('X.')) return false;
+        if (appliedJenjang === 'XI' && !className.startsWith('XI.')) return false;
+        if (appliedJenjang === 'XII' && !className.startsWith('XII.')) return false;
       }
       return true;
     });
-  }, [records, selectedType, selectedJenjang]);
+  }, [records, appliedType, appliedJenjang]);
 
   // --- DERIVED DATA FOR CHARTS ---
 
@@ -117,8 +122,8 @@ export default function RekapitulasiLanjutan() {
     doc.setFont("helvetica", "normal");
     doc.text(`Periode: ${startDate} s/d ${endDate}`, 14, 27);
     doc.text(`Filter Kelas: ${selectedClass === 'all' ? 'Semua Kelas' : classes.find(c=>c.id===selectedClass)?.name || selectedClass}`, 14, 32);
-    doc.text(`Filter Jenjang: ${selectedJenjang === 'all' ? 'Semua Jenjang' : 'Kelas ' + selectedJenjang}`, 14, 37);
-    doc.text(`Tipe Data: ${selectedType === 'all' ? 'Pelanggaran & Penghargaan' : selectedType === 'violation' ? 'Hanya Pelanggaran' : 'Hanya Penghargaan'}`, 14, 42);
+    doc.text(`Filter Jenjang: ${appliedJenjang === 'all' ? 'Semua Jenjang' : 'Kelas ' + appliedJenjang}`, 14, 37);
+    doc.text(`Tipe Data: ${appliedType === 'all' ? 'Pelanggaran & Penghargaan' : appliedType === 'violation' ? 'Hanya Pelanggaran' : 'Hanya Penghargaan'}`, 14, 42);
 
     let currentY = 50;
 
@@ -269,7 +274,7 @@ export default function RekapitulasiLanjutan() {
                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
              </select>
            </div>
-           <button onClick={fetchData} className="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 h-[38px] flex items-center justify-center min-w-[100px]">
+           <button onClick={handleApplyFilters} className="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 h-[38px] flex items-center justify-center min-w-[100px]">
              {loading ? 'Memuat...' : 'Terapkan'}
            </button>
            <button onClick={handleExportPDF} className="bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 h-[38px] flex items-center justify-center min-w-[140px] gap-2 ml-auto">
