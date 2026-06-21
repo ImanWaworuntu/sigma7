@@ -2,9 +2,10 @@
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { format, startOfDay, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
+import { startOfDay, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
+import { getStudents } from '@/lib/dataService';
 
 export default function Home() {
   const { user, logout } = useAuth();
@@ -13,6 +14,7 @@ export default function Home() {
   const [topPrestasi, setTopPrestasi] = useState([]);
   const [topAbsences, setTopAbsences] = useState([]);
   const [spStudents, setSpStudents] = useState([]);
+  const [studentIndicators, setStudentIndicators] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,6 +33,16 @@ export default function Home() {
       
       const isoStartDate = startDate.toISOString();
       
+      const allStudents = await getStudents();
+      const indicatorMap = {};
+      allStudents.forEach(s => {
+          const hpMerah = Math.abs(s.poinPelanggaran || 0);
+          if (hpMerah >= 200) indicatorMap[s.id] = '⚠️⚠️⚠️';
+          else if (hpMerah >= 150) indicatorMap[s.id] = '⚠️⚠️';
+          else if (hpMerah >= 50) indicatorMap[s.id] = '⚠️';
+      });
+      setStudentIndicators(indicatorMap);
+
       // Fetch ALL records for the period to avoid complex composite index requirements
       const qRecords = query(
         collection(db, 'records'),
@@ -238,7 +250,10 @@ export default function Home() {
                                     #{i+1}
                                 </div>
                                 <div>
-                                    <p className="font-bold text-slate-800 text-sm leading-tight">{item.name}</p>
+                                    <p className="font-bold text-slate-800 text-sm leading-tight flex items-center gap-1">
+                                      {item.name}
+                                      {studentIndicators[item.id] && <span className="text-red-500 text-[10px] tracking-tighter" title="Terindikasi Peringatan SP">{studentIndicators[item.id]}</span>}
+                                    </p>
                                     <p className="text-[10px] text-slate-500">{item.class}</p>
                                 </div>
                                 </div>
@@ -273,7 +288,10 @@ export default function Home() {
                                     #{i+1}
                                 </div>
                                 <div>
-                                    <p className="font-bold text-slate-800 text-sm leading-tight">{item.name}</p>
+                                    <p className="font-bold text-slate-800 text-sm leading-tight flex items-center gap-1">
+                                      {item.name}
+                                      {studentIndicators[item.id] && <span className="text-red-500 text-[10px] tracking-tighter" title="Terindikasi Peringatan SP">{studentIndicators[item.id]}</span>}
+                                    </p>
                                     <p className="text-[10px] text-slate-500">{item.class}</p>
                                 </div>
                                 </div>
@@ -301,7 +319,10 @@ export default function Home() {
                             #{i+1}
                         </div>
                         <div>
-                            <p className="font-bold text-slate-800 text-sm leading-tight">{item.name}</p>
+                            <p className="font-bold text-slate-800 text-sm leading-tight flex items-center gap-1">
+                              {item.name}
+                              {studentIndicators[item.id] && <span className="text-red-500 text-[10px] tracking-tighter" title="Terindikasi Peringatan SP">{studentIndicators[item.id]}</span>}
+                            </p>
                             <p className="text-[10px] text-slate-500">{item.class}</p>
                         </div>
                         </div>

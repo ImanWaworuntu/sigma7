@@ -124,7 +124,14 @@ function SiswaProfileContent() {
           <div className="h-24 w-24 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-4xl font-bold mb-4">
             {student.name.charAt(0)}
           </div>
-          <h2 className="text-2xl font-bold text-slate-800">{student.name}</h2>
+          <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            {student.name}
+            {hpMerah >= 50 && (
+                <span className="text-red-500 text-lg tracking-tighter" title="Terindikasi Peringatan SP">
+                    {hpMerah >= 200 ? '⚠️⚠️⚠️' : hpMerah >= 150 ? '⚠️⚠️' : '⚠️'}
+                </span>
+            )}
+          </h2>
           <p className="text-slate-500 font-medium mb-4">Kelas {student.classId || student.class} • NISN: {student.nisn || '-'}</p>
           
           <div className="flex w-full gap-3 mb-6">
