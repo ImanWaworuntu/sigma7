@@ -91,10 +91,30 @@ export const getStudentById = async (studentId) => {
   const docSnap = await getDoc(doc(db, STUDENTS_COLLECTION, studentId));
   if (docSnap.exists()) {
     const data = docSnap.data();
-    if (data.poinPelanggaran === undefined && data.poinNet !== undefined) {
-      data.poinPelanggaran = data.poinNet < 0 ? data.poinNet : 0;
-      data.poinPenghargaan = data.poinNet > 0 ? data.poinNet : 0;
+    
+    // Auto-heal (Read-Repair): Hitung ulang poin berdasarkan rekam jejak
+    const qRec = query(collection(db, RECORDS_COLLECTION), where('studentId', '==', studentId));
+    const snapRec = await getDocs(qRec);
+    let totalPelanggaran = 0;
+    let totalPenghargaan = 0;
+    
+    snapRec.docs.forEach(d => {
+        const pts = d.data().points || 0;
+        if (pts < 0) totalPelanggaran += pts;
+        else if (pts > 0) totalPenghargaan += pts;
+    });
+
+    // Jika terjadi miss-match akibat migrasi legacy, perbaiki secara asinkron
+    if (data.poinPelanggaran !== totalPelanggaran || data.poinPenghargaan !== totalPenghargaan) {
+        updateDoc(doc(db, STUDENTS_COLLECTION, studentId), {
+            poinPelanggaran: totalPelanggaran,
+            poinPenghargaan: totalPenghargaan
+        }).catch(console.error);
+        
+        data.poinPelanggaran = totalPelanggaran;
+        data.poinPenghargaan = totalPenghargaan;
     }
+
     return { id: docSnap.id, ...data };
   }
   return null;
@@ -144,19 +164,25 @@ export const addRecord = async (recordData) => {
     createdAt: new Date().toISOString()
   });
   
-  // Update student total points
+  // Update student total points dengan recalculation penuh untuk menjamin integritas
   const studentRef = doc(db, STUDENTS_COLLECTION, recordData.studentId);
-  const studentSnap = await getDoc(studentRef);
-  if (studentSnap.exists()) {
-    const data = studentSnap.data();
-    if ((recordData.points || 0) < 0) {
-      const currentPoints = data.poinPelanggaran || 0;
-      await updateDoc(studentRef, { poinPelanggaran: currentPoints + (recordData.points || 0) });
-    } else {
-      const currentPoints = data.poinPenghargaan || 0;
-      await updateDoc(studentRef, { poinPenghargaan: currentPoints + (recordData.points || 0) });
-    }
-  }
+  const qRec = query(collection(db, RECORDS_COLLECTION), where('studentId', '==', recordData.studentId));
+  const snapRec = await getDocs(qRec);
+  
+  let totalPelanggaran = 0;
+  let totalPenghargaan = 0;
+  
+  snapRec.docs.forEach(d => {
+      const pts = d.data().points || 0;
+      if (pts < 0) totalPelanggaran += pts;
+      else if (pts > 0) totalPenghargaan += pts;
+  });
+
+  await updateDoc(studentRef, { 
+      poinPelanggaran: totalPelanggaran,
+      poinPenghargaan: totalPenghargaan 
+  });
+  
   return record;
 };
 
