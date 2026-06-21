@@ -161,18 +161,28 @@ export default function MasterData() {
       <div className="px-4 mt-6 space-y-6">
         
         {/* REKAPITULASI MENU */}
-        <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-6 rounded-xl shadow-md text-white flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <h2 className="font-bold text-lg mb-1 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                Dashboard Rekapitulasi Lanjutan
-              </h2>
-              <p className="text-xs text-slate-300">Lihat diagram analitik mendalam, tren pelanggaran per kelas, serta tabel track record komprehensif seluruh sekolah.</p>
+        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 rounded-2xl shadow-lg text-white relative overflow-hidden border border-slate-700">
+            {/* Dekorasi Background */}
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary-500/20 blur-3xl rounded-full"></div>
+            <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-blue-500/20 blur-3xl rounded-full"></div>
+            
+            <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+              <div className="flex-1">
+                <div className="inline-flex items-center justify-center p-2.5 bg-white/10 rounded-xl mb-3 backdrop-blur-sm border border-white/10">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </div>
+                <h2 className="font-bold text-xl mb-1.5 tracking-tight">
+                  Dashboard Rekapitulasi
+                </h2>
+                <p className="text-sm text-slate-300 leading-relaxed max-w-lg">
+                  Akses panel analitik mendalam, pantau tren kedisiplinan per kelas, dan cetak laporan rekam jejak secara komprehensif.
+                </p>
+              </div>
+              <Link href="/master/rekapitulasi" className="w-full sm:w-auto bg-primary-600 hover:bg-primary-500 text-white font-bold py-3.5 px-6 rounded-xl text-sm shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2 mt-2 sm:mt-0 group border border-primary-400/50">
+                <span>Buka Dashboard</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+              </Link>
             </div>
-            <Link href="/master/rekapitulasi" className="bg-primary-600 hover:bg-primary-500 text-white font-bold py-3 px-6 rounded-lg text-sm whitespace-nowrap shadow-sm hover:shadow-lg transition-all active:scale-95 flex items-center gap-2">
-              Buka Dashboard Lanjutan
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-            </Link>
         </div>
 
         {/* MANAJEMEN ATURAN */}
