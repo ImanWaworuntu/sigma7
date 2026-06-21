@@ -45,12 +45,12 @@ export default function Home() {
           const data = doc.data();
           if (data.points < 0) {
               if (!studentMapPelanggaran[data.studentId]) {
-                  studentMapPelanggaran[data.studentId] = { name: data.studentName, class: data.className, points: 0 };
+                  studentMapPelanggaran[data.studentId] = { id: data.studentId, name: data.studentName, class: data.className, points: 0 };
               }
               studentMapPelanggaran[data.studentId].points += data.points;
           } else if (data.points > 0) {
               if (!studentMapPrestasi[data.studentId]) {
-                  studentMapPrestasi[data.studentId] = { name: data.studentName, class: data.className, points: 0 };
+                  studentMapPrestasi[data.studentId] = { id: data.studentId, name: data.studentName, class: data.className, points: 0 };
               }
               studentMapPrestasi[data.studentId].points += data.points;
           }
@@ -69,7 +69,7 @@ export default function Home() {
       snapAbsence.docs.forEach(doc => {
           const data = doc.data();
           if (data.status !== 'Hadir') {
-              if(!absMap[data.studentId]) absMap[data.studentId] = { name: data.studentName, class: data.className, count: 0 };
+              if(!absMap[data.studentId]) absMap[data.studentId] = { id: data.studentId, name: data.studentName, class: data.className, count: 0 };
               absMap[data.studentId].count += 1;
           }
       });
@@ -220,7 +220,7 @@ export default function Home() {
                         const minPoints = topPelanggaran[0]?.points || -1; // points are negative
                         const percentage = Math.min(100, Math.max(0, (item.points / minPoints) * 100));
                         return (
-                        <div key={i} className="relative p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors group overflow-hidden">
+                        <Link href={`/siswa/detail?id=${item.id}`} key={i} className="relative p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors group overflow-hidden block">
                             {/* Visual Progress Bar Background */}
                             <div className="absolute top-0 left-0 h-full bg-violation-50/50 -z-10 transition-all duration-500" style={{ width: `${percentage}%` }}></div>
                             
@@ -238,7 +238,7 @@ export default function Home() {
                                 {item.points}
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                         );
                     })}
                 </div>
@@ -255,7 +255,7 @@ export default function Home() {
                         const maxPoints = topPrestasi[0]?.points || 1;
                         const percentage = Math.min(100, Math.max(0, (item.points / maxPoints) * 100));
                         return (
-                        <div key={i} className="relative p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors group overflow-hidden">
+                        <Link href={`/siswa/detail?id=${item.id}`} key={i} className="relative p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors group overflow-hidden block">
                             {/* Visual Progress Bar Background */}
                             <div className="absolute top-0 left-0 h-full bg-reward-50/50 -z-10 transition-all duration-500" style={{ width: `${percentage}%` }}></div>
                             
@@ -273,7 +273,7 @@ export default function Home() {
                                 +{item.points}
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                         );
                     })}
                 </div>
@@ -287,7 +287,7 @@ export default function Home() {
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                     {topAbsences.length === 0 && <p className="text-xs text-center text-slate-400 p-4">Tidak ada data</p>}
                     {topAbsences.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
+                    <Link href={`/siswa/detail?id=${item.id}`} key={i} className="flex items-center justify-between p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors block">
                         <div className="flex items-center gap-3">
                         <div className="h-7 w-7 bg-red-50 rounded text-red-600 font-bold flex items-center justify-center text-xs">
                             #{i+1}
@@ -300,7 +300,7 @@ export default function Home() {
                         <div className="text-red-600 font-black text-sm bg-red-50 px-2 py-1 rounded-md">
                         {item.count}x
                         </div>
-                    </div>
+                    </Link>
                     ))}
                 </div>
                 </div>

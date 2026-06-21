@@ -71,7 +71,14 @@ export const getStudents = async (classId = null) => {
     q = query(collection(db, STUDENTS_COLLECTION), orderBy('name', 'asc'));
   }
   const snapshot = await getDocs(q);
-  const students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const students = snapshot.docs.map(doc => {
+    const data = doc.data();
+    if (data.poinPelanggaran === undefined && data.poinNet !== undefined) {
+      data.poinPelanggaran = data.poinNet < 0 ? data.poinNet : 0;
+      data.poinPenghargaan = data.poinNet > 0 ? data.poinNet : 0;
+    }
+    return { id: doc.id, ...data };
+  });
   
   if (classId) {
     students.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -83,7 +90,12 @@ export const getStudents = async (classId = null) => {
 export const getStudentById = async (studentId) => {
   const docSnap = await getDoc(doc(db, STUDENTS_COLLECTION, studentId));
   if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() };
+    const data = docSnap.data();
+    if (data.poinPelanggaran === undefined && data.poinNet !== undefined) {
+      data.poinPelanggaran = data.poinNet < 0 ? data.poinNet : 0;
+      data.poinPenghargaan = data.poinNet > 0 ? data.poinNet : 0;
+    }
+    return { id: docSnap.id, ...data };
   }
   return null;
 };

@@ -36,9 +36,17 @@ function InputForm() {
       setStudents(stds);
       setViolations(rulesData.filter(r => r.type === 'violation'));
       setRewards(rulesData.filter(r => r.type === 'reward'));
+
+      const initialStudentId = searchParams.get('studentId');
+      if (initialStudentId && step === 2) {
+        const std = stds.find(s => s.id === initialStudentId);
+        if (std) {
+          setSelectedStudents([std]);
+        }
+      }
     };
     loadInitData();
-  }, []);
+  }, [searchParams]);
 
   let filteredStudents = students;
   if (filterKelas) filteredStudents = filteredStudents.filter(s => s.classId === filterKelas);
@@ -104,15 +112,19 @@ function InputForm() {
       toast.success('Data berhasil disimpan!');
       
       // Reset
-      setTimeout(() => {
-        router.push('?step=1');
-        setSelectedStudents([]);
-        setType(null);
-        setSelectedItem(null);
-        setSearchItem('');
-        setPhoto(null);
-        setTanggal(new Date().toISOString().split('T')[0]);
-      }, 1500);
+        setTimeout(() => {
+          if (searchParams.get('studentId')) {
+             router.push(`/siswa/detail?id=${searchParams.get('studentId')}`);
+          } else {
+             router.push('?step=1');
+             setSelectedStudents([]);
+             setType(null);
+             setSelectedItem(null);
+             setSearchItem('');
+             setPhoto(null);
+             setTanggal(new Date().toISOString().split('T')[0]);
+          }
+        }, 1500);
 
     } catch (error) {
       console.error(error);
