@@ -36,7 +36,7 @@ export default function MasterData() {
 
   useEffect(() => {
     if (!authLoading && user?.role !== 'admin') {
-      router.replace('/');
+      router.replace('/dashboard');
     } else if (!authLoading && user?.role === 'admin') {
       fetchInitData();
     }
@@ -206,7 +206,7 @@ export default function MasterData() {
       <Toaster />
       <div className="bg-primary-600 text-white rounded-b-3xl px-6 pt-10 pb-8 shadow-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
-            <Link href="/" className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
+            <Link href="/dashboard" className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </Link>
             <h1 className="text-xl font-bold tracking-tight">Master Data</h1>

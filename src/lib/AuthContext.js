@@ -45,7 +45,7 @@ export function AuthProvider({ children }) {
       if (role === 'osis') {
         router.push('/upacara');
       } else {
-        router.push('/');
+        router.push('/dashboard');
       }
       return true;
     }
@@ -55,21 +55,21 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('sigma_user');
-    router.push('/login');
+    router.push('/');
   };
 
   // Route protection
   useEffect(() => {
     if (!loading) {
-      if (!user && pathname !== '/login') {
-        router.push('/login');
-      } else if (user && pathname === '/login') {
+      if (!user && pathname !== '/') {
         router.push('/');
+      } else if (user && pathname === '/') {
+        router.push('/dashboard');
       }
       
       // Admin only routes
       if (user && user.role !== 'admin' && pathname === '/siswa/tambah') {
-        router.push('/');
+        router.push('/dashboard');
       }
 
       // OSIS only routes
@@ -82,8 +82,8 @@ export function AuthProvider({ children }) {
   // Determine if we should show the loading screen to prevent flashing protected content
   let showLoading = loading;
   if (!loading) {
-    if (!user && pathname !== '/login') showLoading = true;
-    else if (user && pathname === '/login') showLoading = true;
+    if (!user && pathname !== '/') showLoading = true;
+    else if (user && pathname === '/') showLoading = true;
     else if (user && user.role !== 'admin' && pathname === '/siswa/tambah') showLoading = true;
     else if (user && user.role === 'osis' && !pathname.startsWith('/upacara')) showLoading = true;
   }

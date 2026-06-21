@@ -33,7 +33,7 @@ export default function RekapitulasiLanjutan() {
 
   useEffect(() => {
     if (!authLoading && user?.role !== 'admin') {
-      router.replace('/');
+      router.replace('/dashboard');
     } else if (!authLoading && user?.role === 'admin') {
       const init = async () => {
         const cls = await getClasses();
