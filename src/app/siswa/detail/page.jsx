@@ -3,28 +3,45 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
+import { getStudentById, getRecords } from '@/lib/dataService';
 
 function SiswaProfileContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const studentId = searchParams.get('id');
 
-  // Dummy data fallback
-  const student = {
-    id: studentId,
-    name: 'Ahmad Fulan',
-    class: 'XII.1',
-    nisn: '0012345678',
-    poinPelanggaran: -10,
-    poinPenghargaan: 95,
-    status: 'safe'
+  const [student, setStudent] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (studentId) {
+      fetchData();
+    }
+  }, [studentId]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const std = await getStudentById(studentId);
+      if (std) {
+        setStudent(std);
+        const recs = await getRecords({ studentId });
+        setHistory(recs);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+    setLoading(false);
   };
 
-  const history = [
-    { id: 1, date: '2023-10-15', type: 'reward', desc: 'Mewakili sekolah lomba OSN', points: 50 },
-    { id: 2, date: '2023-10-10', type: 'violation', desc: 'Terlambat datang ke sekolah', points: -10 },
-    { id: 3, date: '2023-09-28', type: 'reward', desc: 'Hafalan Al-Quran 1 Juz', points: 45 },
-  ];
+  if (loading) {
+    return <main className="flex-1 bg-slate-50 p-10 flex flex-col items-center justify-center min-h-screen text-slate-500">Memuat profil siswa...</main>;
+  }
+
+  if (!student) {
+    return <main className="flex-1 bg-slate-50 p-10 flex flex-col items-center justify-center min-h-screen text-slate-500">Siswa tidak ditemukan.</main>;
+  }
 
   // Hitung HP dari points secara terpisah
   const hpMerah = Math.abs(student.poinPelanggaran || 0);
@@ -84,7 +101,7 @@ function SiswaProfileContent() {
             {student.name.charAt(0)}
           </div>
           <h2 className="text-2xl font-bold text-slate-800">{student.name}</h2>
-          <p className="text-slate-500 font-medium mb-4">Kelas {student.class} • NISN: {student.nisn}</p>
+          <p className="text-slate-500 font-medium mb-4">Kelas {student.classId || student.class} • NISN: {student.nisn || '-'}</p>
           
           <div className="flex w-full gap-3 mb-6">
             <div className="bg-red-50 flex-1 rounded-xl p-3 border border-red-100">
@@ -132,7 +149,7 @@ function SiswaProfileContent() {
                     {record.type === 'reward' ? '🌟' : '⚠️'}
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-slate-800 leading-tight mb-1">{record.desc}</p>
+                    <p className="font-bold text-slate-800 leading-tight mb-1">{record.description || record.desc}</p>
                     <p className="text-xs font-semibold text-slate-500">{record.date}</p>
                   </div>
                   <div className={`font-black ${record.type === 'reward' ? 'text-reward-600' : 'text-violation-600'}`}>

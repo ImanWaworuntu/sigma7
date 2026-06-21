@@ -80,6 +80,14 @@ export const getStudents = async (classId = null) => {
   return students;
 };
 
+export const getStudentById = async (studentId) => {
+  const docSnap = await getDoc(doc(db, STUDENTS_COLLECTION, studentId));
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() };
+  }
+  return null;
+};
+
 export const addStudent = async (studentData) => {
   return await addDoc(collection(db, STUDENTS_COLLECTION), {
     ...studentData,
@@ -161,6 +169,9 @@ export const getRecords = async (filters = {}) => {
   }
   if (filters.type && filters.type !== 'all') {
     queryConstraints.push(where('type', '==', filters.type));
+  }
+  if (filters.studentId) {
+    queryConstraints.push(where('studentId', '==', filters.studentId));
   }
   queryConstraints.push(orderBy('createdAt', 'desc'));
 
