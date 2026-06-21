@@ -1,7 +1,13 @@
 "use client"
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { getClasses, addClass, deleteClass, getStudents, moveStudents, graduateClass12, getRules, addRule, deleteRule, getRecords } from '@/lib/dataService';
+import { 
+  getRules, addRule, deleteRule, 
+  getClasses, addClass, deleteClass, 
+  getStudents, moveStudents, graduateClass12 
+} from '@/lib/dataService';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { toast, Toaster } from 'react-hot-toast';
 
 export default function MasterData() {
@@ -21,10 +27,6 @@ export default function MasterData() {
   const [ruleDesc, setRuleDesc] = useState('');
   const [rulePoints, setRulePoints] = useState('');
   const [ruleCategory, setRuleCategory] = useState('Ringan');
-
-  // Recap Navigation State
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
 
   useEffect(() => {
@@ -142,6 +144,50 @@ export default function MasterData() {
         toast.success("Siswa kelas XII berhasil diluluskan!");
     } catch (e) {
         toast.error("Gagal meluluskan siswa");
+    }
+  };
+
+  const runMigration = async () => {
+    if (!confirm("Jalankan injeksi otomatis Gender, NIS, dan NISN untuk seluruh siswa?")) return;
+    try {
+      const snapshot = await getDocs(collection(db, "students"));
+      let count = 0;
+      
+      const guessGender = (name) => {
+        const n = (name || "").toLowerCase();
+        if (n.includes('putri') || n.includes('ayu') || n.includes('wati') || n.includes('sari') || n.includes('nisa') || n.includes('nur') || n.includes('dwi') || n.includes('indah') || n.endsWith('ni') || n.endsWith('na') || n.endsWith('ah') || n.endsWith('ia')) {
+          return 'Wanita';
+        }
+        return 'Pria'; 
+      };
+
+      for (const document of snapshot.docs) {
+        const data = document.data();
+        let updates = {};
+        let needsUpdate = false;
+
+        if (!data.gender) {
+          updates.gender = guessGender(data.name);
+          needsUpdate = true;
+        }
+        if (data.nis === undefined) {
+          updates.nis = "";
+          needsUpdate = true;
+        }
+        if (data.nisn === undefined) {
+          updates.nisn = "";
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          await updateDoc(doc(db, "students", document.id), updates);
+          count++;
+        }
+      }
+      toast.success(`Berhasil menginjeksi ${count} data siswa!`);
+    } catch (e) {
+      toast.error("Gagal menjalankan migrasi");
+      console.error(e);
     }
   };
 
@@ -312,17 +358,27 @@ export default function MasterData() {
             )}
         </div>
 
-        {/* KELULUSAN */}
-        <div className="bg-red-50 p-4 rounded-xl shadow-sm border border-red-100">
-            <h2 className="font-bold text-red-700 mb-1 border-b border-red-200 pb-2 flex items-center gap-2">
-                🎓 Kelulusan Kelas XII
-            </h2>
-            <p className="text-[10px] text-red-600/80 mb-3">Tindakan ini akan me-luluskan (menghapus status aktif) seluruh siswa yang berada di kelas XII. Lakukan hanya di akhir tahun ajaran.</p>
+        {/* LULUSKAN KELAS XII */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 mt-6">
+            <h2 className="font-bold text-slate-800 mb-1 border-b pb-2">Luluskan Kelas XII</h2>
+            <p className="text-[10px] text-slate-500 mb-3">Tindakan ini akan memindahkan semua siswa kelas XII ke status ALUMNI.</p>
             <button 
                 onClick={handleGraduate}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg text-sm transition-colors"
+                className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 rounded-lg text-sm transition-colors"
             >
-                Luluskan Siswa Kelas XII
+                Proses Kelulusan
+            </button>
+        </div>
+
+        {/* MIGRASI DATA */}
+        <div className="bg-red-50 p-4 rounded-xl shadow-sm border border-red-100 mt-6 mb-10">
+            <h2 className="font-bold text-red-800 mb-1 border-b border-red-200 pb-2">Migrasi Data Terpusat (Admin)</h2>
+            <p className="text-[10px] text-red-600 mb-3">Jalankan fungsi ini HANYA SEKALI untuk menyuntikkan kolom Jenis Kelamin, NIS, dan NISN ke seluruh siswa yang sudah ada di database saat ini secara otomatis.</p>
+            <button 
+                onClick={runMigration}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg text-sm transition-colors shadow-sm"
+            >
+                Injeksi Database (Sekarang)
             </button>
         </div>
 

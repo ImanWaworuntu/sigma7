@@ -121,10 +121,10 @@ function SiswaProfileContent() {
 
         {/* Profile Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6 flex flex-col items-center text-center relative print:shadow-none print:border-slate-300">
-          <div className="h-24 w-24 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-4xl font-bold mb-4">
+          <div className={`h-24 w-24 rounded-full flex items-center justify-center text-4xl font-bold mb-4 ${student.gender === 'Wanita' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
             {student.name.charAt(0)}
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <h2 className={`text-2xl font-bold flex items-center gap-2 ${student.gender === 'Wanita' ? 'text-pink-500' : 'text-blue-600'}`}>
             {student.name}
             {hpMerah >= 50 && (
                 <span className="text-red-500 text-lg tracking-tighter" title="Terindikasi Peringatan SP">
@@ -132,7 +132,7 @@ function SiswaProfileContent() {
                 </span>
             )}
           </h2>
-          <p className="text-slate-500 font-medium mb-4">Kelas {student.classId || student.class} • NISN: {student.nisn || '-'}</p>
+          <p className="text-slate-500 font-medium mb-4">Kelas {student.classId || student.class} • NIS: {student.nis || '-'} • NISN: {student.nisn || '-'}</p>
           
           <div className="flex w-full gap-3 mb-6">
             <div className="bg-red-50 flex-1 rounded-xl p-3 border border-red-100">

@@ -239,22 +239,32 @@ export default function Home() {
                     {topPelanggaran.map((item, i) => {
                         const minPoints = topPelanggaran[0]?.points || -1; // points are negative
                         const percentage = Math.min(100, Math.max(0, (item.points / minPoints) * 100));
+                        
+                        const hpMerah = Math.abs(item.points || item.poinPelanggaran || 0);
+                        let cardBg = 'hover:bg-slate-50';
+                        if (hpMerah >= 150) cardBg = 'bg-red-50 hover:bg-red-100 border-red-200';
+                        else if (hpMerah >= 50) cardBg = 'bg-orange-50 hover:bg-orange-100 border-orange-200';
+                        
+                        let nameColor = 'text-slate-800';
+                        if (item.gender === 'Wanita') nameColor = 'text-pink-600';
+                        else if (item.gender === 'Pria') nameColor = 'text-blue-600';
+
                         return (
-                        <Link href={`/siswa/detail?id=${item.id}`} key={i} className="relative p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors group overflow-hidden block">
+                        <Link href={`/siswa/detail?id=${item.id}`} key={i} className={`relative p-3 border-b border-slate-50 last:border-0 transition-colors group overflow-hidden block ${cardBg}`}>
                             {/* Visual Progress Bar Background */}
-                            <div className="absolute top-0 left-0 h-full bg-violation-50/50 -z-10 transition-all duration-500" style={{ width: `${percentage}%` }}></div>
+                            <div className="absolute top-0 left-0 h-full bg-violation-50/30 -z-10 transition-all duration-500" style={{ width: `${percentage}%` }}></div>
                             
                             <div className="flex items-center justify-between relative z-10">
                                 <div className="flex items-center gap-3">
-                                <div className="h-7 w-7 bg-violation-50 rounded text-violation-600 font-bold flex items-center justify-center text-xs group-hover:scale-110 transition-transform">
+                                <div className="h-7 w-7 bg-violation-50 rounded text-violation-600 font-bold flex items-center justify-center text-xs group-hover:scale-110 transition-transform shadow-sm">
                                     #{i+1}
                                 </div>
                                 <div>
-                                    <p className="font-bold text-slate-800 text-sm leading-tight flex items-center gap-1">
+                                    <p className={`font-bold text-sm leading-tight flex items-center gap-1 ${nameColor}`}>
                                       {item.name}
                                       {studentIndicators[item.id] && <span className="text-red-500 text-[10px] tracking-tighter" title="Terindikasi Peringatan SP">{studentIndicators[item.id]}</span>}
                                     </p>
-                                    <p className="text-[10px] text-slate-500">{item.class}</p>
+                                    <p className="text-[10px] text-slate-500">{item.class || item.classId}</p>
                                 </div>
                                 </div>
                                 <div className="text-violation-600 font-black text-sm bg-violation-50 px-2 py-1 rounded-md">
@@ -277,6 +287,11 @@ export default function Home() {
                     {topPrestasi.map((item, i) => {
                         const maxPoints = topPrestasi[0]?.points || 1;
                         const percentage = Math.min(100, Math.max(0, (item.points / maxPoints) * 100));
+                        
+                        let nameColor = 'text-slate-800';
+                        if (item.gender === 'Wanita') nameColor = 'text-pink-600';
+                        else if (item.gender === 'Pria') nameColor = 'text-blue-600';
+
                         return (
                         <Link href={`/siswa/detail?id=${item.id}`} key={i} className="relative p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors group overflow-hidden block">
                             {/* Visual Progress Bar Background */}
@@ -288,11 +303,11 @@ export default function Home() {
                                     #{i+1}
                                 </div>
                                 <div>
-                                    <p className="font-bold text-slate-800 text-sm leading-tight flex items-center gap-1">
+                                    <p className={`font-bold text-sm leading-tight flex items-center gap-1 ${nameColor}`}>
                                       {item.name}
                                       {studentIndicators[item.id] && <span className="text-red-500 text-[10px] tracking-tighter" title="Terindikasi Peringatan SP">{studentIndicators[item.id]}</span>}
                                     </p>
-                                    <p className="text-[10px] text-slate-500">{item.class}</p>
+                                    <p className="text-[10px] text-slate-500">{item.class || item.classId}</p>
                                 </div>
                                 </div>
                                 <div className="text-reward-600 font-black text-sm bg-reward-50 px-2 py-1 rounded-md">

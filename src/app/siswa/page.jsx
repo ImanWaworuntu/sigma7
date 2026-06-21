@@ -115,9 +115,16 @@ export default function SiswaPage() {
               const statusColor = pPelanggaran < -50 ? 'bg-violation-100 text-violation-600' : 
                                   pPenghargaan > 0 ? 'bg-reward-100 text-reward-600' : 
                                   'bg-slate-100 text-slate-500';
-              
+              let cardBg = 'bg-white border-slate-100';
+              if (hpMerah >= 150) cardBg = 'bg-red-50 border-red-200';
+              else if (hpMerah >= 50) cardBg = 'bg-orange-50 border-orange-200';
+
+              let nameColor = 'text-slate-800 group-hover:text-primary-600';
+              if (student.gender === 'Wanita') nameColor = 'text-pink-600 group-hover:text-pink-700';
+              else if (student.gender === 'Pria') nameColor = 'text-blue-600 group-hover:text-blue-700';
+
               return (
-                <Link href={`/siswa/detail?id=${student.id}`} key={student.id} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all group block cursor-pointer">
+                <Link href={`/siswa/detail?id=${student.id}`} key={student.id} className={`rounded-xl p-4 shadow-sm border flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all group block cursor-pointer ${cardBg}`}>
                   <div className="flex items-center gap-3">
                     <div className="relative">
                       <div className={`h-12 w-12 rounded-full flex items-center justify-center font-bold text-lg ${statusColor}`}>
@@ -125,7 +132,7 @@ export default function SiswaPage() {
                       </div>
                     </div>
                     <div>
-                      <p className="font-bold text-slate-800 leading-tight group-hover:text-primary-600 transition-colors">{student.name}</p>
+                      <p className={`font-bold leading-tight transition-colors ${nameColor}`}>{student.name}</p>
                       <p className="text-xs text-slate-500 mt-1">{student.classId}</p>
                     </div>
                   </div>

@@ -8,6 +8,9 @@ export default function TambahSiswa() {
   const [classes, setClasses] = useState([]);
   const [name, setName] = useState('');
   const [classId, setClassId] = useState('');
+  const [nis, setNis] = useState('');
+  const [nisn, setNisn] = useState('');
+  const [gender, setGender] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -20,13 +23,16 @@ export default function TambahSiswa() {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!name || !classId) return toast.error("Lengkapi data");
+    if (!name || !classId || !gender) return toast.error("Lengkapi data yang wajib (Nama, Kelas, Jenis Kelamin)");
     
     setSubmitting(true);
     try {
-      await addStudent({ name, classId });
+      await addStudent({ name, classId, nis, nisn, gender });
       toast.success("Siswa berhasil ditambahkan!");
       setName('');
+      setNis('');
+      setNisn('');
+      setGender('');
     } catch (error) {
       toast.error("Gagal menambahkan siswa");
     }
@@ -64,6 +70,40 @@ export default function TambahSiswa() {
                 >
                     <option value="">-- Pilih Kelas --</option>
                     {classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="text-sm font-semibold text-slate-700 block mb-2">NIS (Opsional)</label>
+                    <input 
+                        type="text" 
+                        value={nis}
+                        onChange={e => setNis(e.target.value)}
+                        placeholder="Contoh: 10293"
+                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-colors text-sm"
+                    />
+                </div>
+                <div>
+                    <label className="text-sm font-semibold text-slate-700 block mb-2">NISN (Opsional)</label>
+                    <input 
+                        type="text" 
+                        value={nisn}
+                        onChange={e => setNisn(e.target.value)}
+                        placeholder="Contoh: 0089201923"
+                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-colors text-sm"
+                    />
+                </div>
+            </div>
+            <div>
+                <label className="text-sm font-semibold text-slate-700 block mb-2">Jenis Kelamin</label>
+                <select 
+                    value={gender}
+                    onChange={e => setGender(e.target.value)}
+                    className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-colors text-sm font-semibold text-slate-700 bg-white"
+                >
+                    <option value="">-- Pilih Jenis Kelamin --</option>
+                    <option value="Pria">Pria</option>
+                    <option value="Wanita">Wanita</option>
                 </select>
             </div>
             
