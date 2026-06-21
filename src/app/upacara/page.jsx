@@ -67,9 +67,6 @@ export default function Upacara() {
                     <button onClick={logout} className="ml-2 text-[10px] bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded-full transition-colors shadow-sm">Logout</button>
                   </div>
                 </div>
-                <div className="h-14 w-14 bg-white/20 rounded-lg flex items-center justify-center p-1 shadow-md backdrop-blur-sm">
-                  <div className="h-full w-full bg-white/50 rounded animate-pulse" /> {/* Placeholder for logo */}
-                </div>
               </div>
             ) : (
               <div className="w-full flex items-center justify-between">

@@ -136,9 +136,6 @@ export default function Home() {
               <button onClick={logout} className="ml-2 text-[10px] bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded-full transition-colors">Logout</button>
             </div>
           </div>
-          <div className="h-14 w-14 bg-white rounded-lg flex items-center justify-center p-1 shadow-md">
-            <div className="h-full w-full bg-slate-200 rounded animate-pulse" /> {/* Placeholder for logo */}
-          </div>
         </div>
       </div>
 
