@@ -184,9 +184,9 @@ function SiswaProfileContent() {
                     <div className="flex items-center gap-2">
                       <p className="text-xs font-semibold text-slate-500">{record.date}</p>
                       <span className="text-[10px] text-slate-400 border-l border-slate-300 pl-2 ml-1 flex-shrink-0">Oleh: {record.reportedBy || 'Sistem'}</span>
-                      {record.photoUrl && (
+                      {(record.hasPhoto || record.photoUrl) && (
                         <a 
-                          href={record.photoUrl} 
+                          href={record.photoUrl || `/bukti?id=${record.id}`} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-1 print:hidden"

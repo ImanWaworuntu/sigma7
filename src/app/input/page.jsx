@@ -3,12 +3,40 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getStudents, getClasses, addRecord, getRules } from '@/lib/dataService';
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { doc, updateDoc } from 'firebase/firestore';
 import { app, db } from '@/lib/firebase';
-import imageCompression from 'browser-image-compression';
 import { toast, Toaster } from 'react-hot-toast';
 import { useAuth } from '@/lib/AuthContext';
+
+const compressImageToDataURL = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+        } else {
+          if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
 
 function InputForm() {
   const router = useRouter();
@@ -34,6 +62,7 @@ function InputForm() {
   const [searchItem, setSearchItem] = useState(''); 
   const [tanggal, setTanggal] = useState(new Date().toISOString().split('T')[0]);
   const [photo, setPhoto] = useState(null);
+  const [photoBase64, setPhotoBase64] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -86,9 +115,8 @@ function InputForm() {
       const file = e.target.files[0];
       setPhoto(file);
       try {
-        const options = { maxSizeMB: 0.15, maxWidthOrHeight: 1024, useWebWorker: false };
-        const compressedFile = await imageCompression(file, options);
-        setPhoto(compressedFile);
+        const base64 = await compressImageToDataURL(file);
+        setPhotoBase64(base64);
       } catch (err) {
         console.error("Compression error:", err);
       }
@@ -98,20 +126,7 @@ function InputForm() {
   const handleSave = async () => {
     setSubmitting(true);
     try {
-      let uploadedPhotoUrl = '';
-      
-      // TUNGGU SAMPAI UPLOAD SELESAI agar tidak mati saat HP tertidur / di-close
-      if (photo) {
-        const storage = getStorage(app);
-        const fileName = photo.name || 'photo.jpg';
-        const safeFileName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-        const fileRef = ref(storage, `records/${Date.now()}_${safeFileName}`);
-        
-        await uploadBytes(fileRef, photo);
-        uploadedPhotoUrl = await getDownloadURL(fileRef);
-      }
-
-      // Simpan data teks ke database secara paralel (Sangat Cepat)
+      // Simpan data teks ke database secara paralel (Sangat Cepat & Instan)
       const promises = selectedStudents.map(student => {
         return addRecord({
           studentId: student.id,
@@ -124,7 +139,8 @@ function InputForm() {
           category: selectedItem.category,
           points: type === 'reward' ? selectedItem.points : -Math.abs(selectedItem.points),
           date: tanggal,
-          photoUrl: uploadedPhotoUrl,
+          hasPhoto: !!photoBase64,
+          photoBase64: photoBase64,
           reportedBy: user?.username || 'Sistem'
         });
       });
@@ -144,6 +160,7 @@ function InputForm() {
              setSelectedItem(null);
              setSearchItem('');
              setPhoto(null);
+             setPhotoBase64(null);
              setTanggal(new Date().toISOString().split('T')[0]);
           }
         }, 1500);
@@ -377,7 +394,7 @@ function InputForm() {
                 <div className="relative flex flex-col items-center justify-center w-full h-24 border-2 border-primary-500 bg-primary-50 rounded-xl">
                   <button 
                     type="button"
-                    onClick={() => setPhoto(null)}
+                    onClick={() => { setPhoto(null); setPhotoBase64(null); }}
                     className="absolute top-2 right-2 bg-red-100 text-red-600 p-1.5 rounded-full hover:bg-red-200 transition-colors"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>

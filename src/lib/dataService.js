@@ -164,10 +164,18 @@ export const graduateClass12 = async () => {
 
 // --- RECORDS (Pelanggaran & Penghargaan) ---
 export const addRecord = async (recordData) => {
+  const { photoBase64, ...restData } = recordData;
   const record = await addDoc(collection(db, RECORDS_COLLECTION), {
-    ...recordData,
+    ...restData,
     createdAt: new Date().toISOString()
   });
+  
+  if (photoBase64) {
+    // Simpan foto di koleksi terpisah agar tidak membebani query records
+    await setDoc(doc(db, 'record_photos', record.id), {
+      photoBase64: photoBase64
+    });
+  }
   
   // Update student total points dengan recalculation penuh untuk menjamin integritas
   const studentRef = doc(db, STUDENTS_COLLECTION, recordData.studentId);
