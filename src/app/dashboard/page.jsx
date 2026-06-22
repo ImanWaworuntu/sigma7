@@ -61,7 +61,10 @@ export default function Home() {
 
       snapRecords.docs.forEach(doc => {
           const data = doc.data();
-          const currentClass = classMap[data.studentId] || data.className;
+          const currentClass = classMap[data.studentId] || data.className || '';
+          
+          if (currentClass.toUpperCase().startsWith('ALUMNI')) return;
+
           if (data.points < 0) {
               if (!studentMapPelanggaran[data.studentId]) {
                   studentMapPelanggaran[data.studentId] = { id: data.studentId, name: data.studentName, class: currentClass, points: 0 };
@@ -87,7 +90,10 @@ export default function Home() {
       const absMap = {};
       snapAbsence.docs.forEach(doc => {
           const data = doc.data();
-          const currentClass = classMap[data.studentId] || data.className;
+          const currentClass = classMap[data.studentId] || data.className || '';
+          
+          if (currentClass.toUpperCase().startsWith('ALUMNI')) return;
+
           if (data.status !== 'Hadir') {
               if(!absMap[data.studentId]) absMap[data.studentId] = { id: data.studentId, name: data.studentName, class: currentClass, count: 0 };
               absMap[data.studentId].count += 1;
@@ -103,6 +109,8 @@ export default function Home() {
       );
       const snapSP = await getDocs(qSP);
       const arrSP = snapSP.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(student => {
+          if ((student.classId || '').toUpperCase().startsWith('ALUMNI')) return false;
+          
           const hpMerah = Math.abs(student.poinPelanggaran || 0);
           const issued = student.spIssuedLevel || 0;
           if (hpMerah >= 200 && issued < 3) return true;
