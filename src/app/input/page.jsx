@@ -77,15 +77,36 @@ function InputForm() {
     setStep(3);
   };
 
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     if (e.target.files && e.target.files[0]) {
-      setPhoto(e.target.files[0]);
+      const file = e.target.files[0];
+      setPhoto(file);
+      try {
+        const options = { maxSizeMB: 0.15, maxWidthOrHeight: 1024, useWebWorker: false };
+        const compressedFile = await imageCompression(file, options);
+        setPhoto(compressedFile);
+      } catch (err) {
+        console.error("Compression error:", err);
+      }
     }
   };
 
   const handleSave = async () => {
     setSubmitting(true);
     try {
+      let uploadedPhotoUrl = '';
+      
+      // TUNGGU SAMPAI UPLOAD SELESAI agar tidak mati saat HP tertidur / di-close
+      if (photo) {
+        const storage = getStorage(app);
+        const fileName = photo.name || 'photo.jpg';
+        const safeFileName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+        const fileRef = ref(storage, `records/${Date.now()}_${safeFileName}`);
+        
+        await uploadBytes(fileRef, photo);
+        uploadedPhotoUrl = await getDownloadURL(fileRef);
+      }
+
       // Simpan data teks ke database secara paralel (Sangat Cepat)
       const promises = selectedStudents.map(student => {
         return addRecord({
@@ -99,44 +120,16 @@ function InputForm() {
           category: selectedItem.category,
           points: type === 'reward' ? selectedItem.points : -Math.abs(selectedItem.points),
           date: tanggal,
-          photoUrl: '', // sementara kosong, akan diisi oleh background task
+          photoUrl: uploadedPhotoUrl,
           reportedBy: user?.username || 'Sistem'
         });
       });
 
-      const savedRecords = await Promise.all(promises);
-
-      // Proses foto di background (Asynchronous Fire-and-Forget)
-      if (photo) {
-        const photoToUpload = photo;
-        (async () => {
-          try {
-            const options = { maxSizeMB: 0.15, maxWidthOrHeight: 1024, useWebWorker: true, initialQuality: 0.6 };
-            const compressedFile = await imageCompression(photoToUpload, options);
-            const storage = getStorage(app);
-            const fileName = compressedFile.name || photoToUpload.name || 'photo.jpg';
-            const safeFileName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-            const fileRef = ref(storage, `records/${Date.now()}_${safeFileName}`);
-            await uploadBytes(fileRef, compressedFile);
-            const uploadedUrl = await getDownloadURL(fileRef);
-
-            // Update URL foto ke semua record yang barusan dibuat
-            const updatePromises = savedRecords.map(record => {
-              if (record && record.id) {
-                return updateDoc(doc(db, 'records', record.id), { photoUrl: uploadedUrl });
-              }
-              return Promise.resolve();
-            });
-            await Promise.all(updatePromises);
-          } catch (e) {
-            console.error('Background photo upload failed', e);
-          }
-        })();
-      }
+      await Promise.all(promises);
 
       toast.success('Data berhasil disimpan!');
       
-      // Reset dengan delay lebih cepat karena tidak ada blocking UI
+      // Reset
         setTimeout(() => {
           if (searchParams.get('studentId')) {
              router.push(`/siswa/detail?id=${searchParams.get('studentId')}`);
@@ -149,7 +142,7 @@ function InputForm() {
              setPhoto(null);
              setTanggal(new Date().toISOString().split('T')[0]);
           }
-        }, 1000);
+        }, 1500);
 
     } catch (error) {
       console.error(error);
