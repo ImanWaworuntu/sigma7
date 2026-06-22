@@ -148,10 +148,7 @@ export default function Home() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">SIGMA 7</h1>
             <p className="text-primary-100 text-sm font-medium">SMAN 7 Makassar</p>
-            <div className="mt-2 inline-flex items-center gap-2 bg-primary-700/50 rounded-full pr-3 pl-1 py-1">
-              <div className="h-6 w-6 bg-white rounded-full flex items-center justify-center text-primary-700 font-bold text-xs uppercase">
-                {user?.role?.charAt(0) || 'U'}
-              </div>
+            <div className="mt-2 inline-flex items-center gap-2 bg-primary-700/50 rounded-full px-3 py-1">
               <span className="text-xs font-medium capitalize">{user?.username || user?.role || 'Admin'}</span>
               <button onClick={logout} className="ml-2 text-[10px] bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded-full transition-colors">Logout</button>
             </div>
