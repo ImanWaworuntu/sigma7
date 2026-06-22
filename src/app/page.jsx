@@ -75,6 +75,7 @@ export default function LoginPage() {
         </form>
 
       </div>
+      <p className="text-center text-xs text-slate-400 mt-6 font-medium">&copy; Pandu Digital SMANET. 2026</p>
     </div>
   );
 }
