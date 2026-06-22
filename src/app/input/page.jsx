@@ -68,8 +68,8 @@ function InputForm() {
   useEffect(() => {
     const loadInitData = async () => {
       const [cls, stds, rulesData] = await Promise.all([getClasses(), getStudents(), getRules()]);
-      setClassList(cls);
-      setStudents(stds);
+      setClassList(cls.filter(c => !c.name.toUpperCase().startsWith('ALUMNI')));
+      setStudents(stds.filter(s => !(s.classId || '').toUpperCase().startsWith('ALUMNI')));
       setViolations(rulesData.filter(r => r.type === 'violation'));
       setRewards(rulesData.filter(r => r.type === 'reward'));
 

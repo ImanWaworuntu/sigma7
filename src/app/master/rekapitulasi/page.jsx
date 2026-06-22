@@ -65,9 +65,11 @@ export default function RekapitulasiLanjutan() {
       if (appliedType === 'violation' && r.points > 0) return false;
       if (appliedType === 'reward' && r.points < 0) return false;
       
+      const className = r.className || '';
+      if (className.toUpperCase().startsWith('ALUMNI')) return false; // Sembunyikan Alumni
+      
       // Filter by Jenjang
       if (appliedJenjang !== 'all') {
-        const className = r.className || '';
         if (appliedJenjang === 'X' && !className.startsWith('X.')) return false;
         if (appliedJenjang === 'XI' && !className.startsWith('XI.')) return false;
         if (appliedJenjang === 'XII' && !className.startsWith('XII.')) return false;

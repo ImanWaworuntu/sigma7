@@ -155,11 +155,42 @@ export const graduateClass12 = async () => {
   const q = query(collection(db, STUDENTS_COLLECTION), where('classId', '>=', 'XII'), where('classId', '<=', 'XII\uf8ff'));
   const snapshot = await getDocs(q);
   const batch = writeBatch(db);
+  const currentYear = new Date().getFullYear();
   snapshot.docs.forEach(document => {
     const studentRef = doc(db, STUDENTS_COLLECTION, document.id);
-    batch.update(studentRef, { status: 'graduated', classId: 'ALUMNI' }); // Or delete: batch.delete(studentRef);
+    batch.update(studentRef, { status: 'graduated', classId: `ALUMNI ${currentYear}` });
   });
   await batch.commit();
+};
+
+export const cleanAlumniRecords = async () => {
+  // 1. Dapatkan semua siswa alumni
+  const qStudents = query(collection(db, STUDENTS_COLLECTION), where('status', '==', 'graduated'));
+  const snapStudents = await getDocs(qStudents);
+  
+  for (const studentDoc of snapStudents.docs) {
+    const studentId = studentDoc.id;
+    
+    // 2. Dapatkan semua records untuk siswa ini
+    const qRecords = query(collection(db, RECORDS_COLLECTION), where('studentId', '==', studentId));
+    const snapRecords = await getDocs(qRecords);
+    
+    const batch = writeBatch(db);
+    snapRecords.docs.forEach(recordDoc => {
+      // Hapus dari records
+      batch.delete(doc(db, RECORDS_COLLECTION, recordDoc.id));
+      // Hapus dari record_photos (ID-nya sama dengan record)
+      batch.delete(doc(db, 'record_photos', recordDoc.id));
+    });
+    
+    // 3. Reset poin siswa (Biodata tetap aman)
+    batch.update(doc(db, STUDENTS_COLLECTION, studentId), {
+      poinPelanggaran: 0,
+      poinPenghargaan: 0
+    });
+    
+    await batch.commit();
+  }
 };
 
 // --- RECORDS (Pelanggaran & Penghargaan) ---

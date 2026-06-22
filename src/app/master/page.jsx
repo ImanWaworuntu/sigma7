@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { 
   getRules, addRule, deleteRule, 
   getClasses, addClass, deleteClass, 
-  getStudents, moveStudents, graduateClass12 
+  getStudents, moveStudents, graduateClass12, cleanAlumniRecords
 } from '@/lib/dataService';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
@@ -19,6 +19,7 @@ export default function MasterData() {
   const [classes, setClasses] = useState([]);
   const [newClassName, setNewClassName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [cleaning, setCleaning] = useState(false);
 
   // Transfer Student State
   const [selectedClassFrom, setSelectedClassFrom] = useState('');
@@ -147,12 +148,65 @@ export default function MasterData() {
   };
 
   const handleGraduate = async () => {
-    if (!confirm("PERHATIAN! Tindakan ini meluluskan siswa kelas XII. Lanjutkan?")) return;
+    if (!confirm("PERHATIAN! Tindakan ini meluluskan siswa kelas XII (akan diubah menjadi ALUMNI + Tahun). Lanjutkan?")) return;
     try {
         await graduateClass12();
         toast.success("Siswa kelas XII berhasil diluluskan!");
     } catch (e) {
         toast.error("Gagal meluluskan siswa");
+    }
+  };
+
+  const handleCleanAlumni = async () => {
+    if (!confirm("PERHATIAN! Tindakan ini akan menghapus semua RIWAYAT PELANGGARAN dan FOTO BUKTI untuk semua ALUMNI secara permanen. Biodata alumni akan tetap aman. Lanjutkan?")) return;
+    setCleaning(true);
+    try {
+        await cleanAlumniRecords();
+        toast.success("Riwayat dan foto alumni berhasil dihapus secara permanen!");
+    } catch (e) {
+        console.error(e);
+        toast.error("Gagal menghapus riwayat alumni");
+    }
+    setCleaning(false);
+  };
+
+  const handleDownloadAlumni = async () => {
+    try {
+      const allStudents = await getStudents(); 
+      const alumniList = allStudents.filter(s => s.status === 'graduated');
+      
+      if (alumniList.length === 0) {
+        return toast.error("Belum ada data alumni.");
+      }
+
+      const csvRows = [];
+      const headers = ['Nama', 'Kelas Kelulusan', 'Jenis Kelamin', 'NIS', 'NISN', 'Poin Pelanggaran', 'Poin Penghargaan'];
+      csvRows.push(headers.join(','));
+
+      alumniList.forEach(s => {
+        const row = [
+          `"${s.name || ''}"`,
+          `"${s.classId || ''}"`,
+          `"${s.gender || ''}"`,
+          `"${s.nis || ''}"`,
+          `"${s.nisn || ''}"`,
+          s.poinPelanggaran || 0,
+          s.poinPenghargaan || 0
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      const blob = new Blob([csvRows.join('\\n')], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('hidden', '');
+      a.setAttribute('href', url);
+      a.setAttribute('download', `data_alumni_${new Date().getFullYear()}.csv`);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (e) {
+      toast.error("Gagal mengunduh data");
     }
   };
 
@@ -370,13 +424,34 @@ export default function MasterData() {
         {/* LULUSKAN KELAS XII */}
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 mt-6">
             <h2 className="font-bold text-slate-800 mb-1 border-b pb-2">Luluskan Kelas XII</h2>
-            <p className="text-[10px] text-slate-500 mb-3">Tindakan ini akan memindahkan semua siswa kelas XII ke status ALUMNI.</p>
+            <p className="text-[10px] text-slate-500 mb-3">Tindakan ini akan memindahkan semua siswa kelas XII ke status ALUMNI beserta tahun kelulusannya.</p>
             <button 
                 onClick={handleGraduate}
                 className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 rounded-lg text-sm transition-colors"
             >
                 Proses Kelulusan
             </button>
+        </div>
+
+        {/* MANAJEMEN ALUMNI (JUNI) */}
+        <div className="bg-orange-50 p-4 rounded-xl shadow-sm border border-orange-200 mt-6">
+            <h2 className="font-bold text-orange-800 mb-1 border-b border-orange-200 pb-2">Manajemen Alumni & Beban Database</h2>
+            <p className="text-[10px] text-orange-600 mb-4">Gunakan fitur di bawah untuk mengelola data alumni. Unduh Excel untuk mencadangkan rekam jejak mereka, lalu Bersihkan Rekam Jejak (Sangat disarankan tiap bulan Juni) untuk menghemat kapasitas database dari beban foto. Biodata tetap aman.</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+                <button 
+                    onClick={handleDownloadAlumni}
+                    className="flex-1 bg-white hover:bg-slate-50 text-orange-700 border border-orange-300 font-bold py-2 rounded-lg text-sm transition-colors shadow-sm"
+                >
+                    Unduh CSV (Excel) Alumni
+                </button>
+                <button 
+                    onClick={handleCleanAlumni}
+                    disabled={cleaning}
+                    className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-lg text-sm transition-colors shadow-sm disabled:opacity-50"
+                >
+                    {cleaning ? 'Membersihkan...' : 'Hapus Rekam Jejak & Foto'}
+                </button>
+            </div>
         </div>
 
         {/* MIGRASI DATA */}
