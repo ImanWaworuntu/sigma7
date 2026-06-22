@@ -144,7 +144,7 @@ function SiswaProfileContent() {
         <h1 className="text-xl font-bold">Profil Siswa</h1>
       </div>
 
-      <div className="px-6 -mt-16">
+      <div className="px-6 -mt-16 relative z-10">
         <div className="flex justify-end gap-2 mb-4">
           <Link href={`/input?studentId=${studentId}&step=2`} className="bg-primary-600 text-white px-4 py-2 rounded-full shadow-sm hover:bg-primary-700 active:scale-95 transition-all text-xs font-bold flex items-center print:hidden">
             + Input Poin
