@@ -61,6 +61,10 @@ export default function Home() {
 
       snapRecords.docs.forEach(doc => {
           const data = doc.data();
+          
+          // Skip if student has been deleted from database
+          if (!classMap.hasOwnProperty(data.studentId)) return;
+
           const currentClass = classMap[data.studentId] || data.className || '';
           
           if (currentClass.toUpperCase().startsWith('ALUMNI')) return;
@@ -90,6 +94,10 @@ export default function Home() {
       const absMap = {};
       snapAbsence.docs.forEach(doc => {
           const data = doc.data();
+          
+          // Skip if student has been deleted from database
+          if (!classMap.hasOwnProperty(data.studentId)) return;
+
           const currentClass = classMap[data.studentId] || data.className || '';
           
           if (currentClass.toUpperCase().startsWith('ALUMNI')) return;

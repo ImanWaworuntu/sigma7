@@ -139,7 +139,27 @@ export const issueSp = async (studentId, level) => {
 };
 
 export const deleteStudent = async (studentId) => {
-  return await deleteDoc(doc(db, STUDENTS_COLLECTION, studentId));
+  const batch = writeBatch(db);
+  
+  // Hapus dari koleksi students
+  batch.delete(doc(db, STUDENTS_COLLECTION, studentId));
+  
+  // Cari dan hapus semua records dan record_photos
+  const qRecords = query(collection(db, RECORDS_COLLECTION), where('studentId', '==', studentId));
+  const snapRecords = await getDocs(qRecords);
+  snapRecords.docs.forEach(r => {
+    batch.delete(doc(db, RECORDS_COLLECTION, r.id));
+    batch.delete(doc(db, 'record_photos', r.id));
+  });
+
+  // Cari dan hapus dari attendance
+  const qAttendance = query(collection(db, 'attendance'), where('studentId', '==', studentId));
+  const snapAttendance = await getDocs(qAttendance);
+  snapAttendance.docs.forEach(a => {
+    batch.delete(doc(db, 'attendance', a.id));
+  });
+
+  return await batch.commit();
 };
 
 export const moveStudents = async (studentIds, newClassId) => {
