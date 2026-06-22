@@ -11,6 +11,10 @@ export default function TambahSiswa() {
   const [nis, setNis] = useState('');
   const [nisn, setNisn] = useState('');
   const [gender, setGender] = useState('');
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [parentPhone, setParentPhone] = useState('');
+  const [homeroomTeacher, setHomeroomTeacher] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -27,12 +31,16 @@ export default function TambahSiswa() {
     
     setSubmitting(true);
     try {
-      await addStudent({ name, classId, nis, nisn, gender });
+      await addStudent({ name, classId, nis, nisn, gender, address, phone, parentPhone, homeroomTeacher });
       toast.success("Siswa berhasil ditambahkan!");
       setName('');
       setNis('');
       setNisn('');
       setGender('');
+      setAddress('');
+      setPhone('');
+      setParentPhone('');
+      setHomeroomTeacher('');
     } catch (error) {
       toast.error("Gagal menambahkan siswa");
     }
@@ -109,6 +117,55 @@ export default function TambahSiswa() {
                     <option value="Pria">Pria</option>
                     <option value="Wanita">Wanita</option>
                 </select>
+            </div>
+            
+            <div>
+                <label className="text-sm font-semibold text-slate-700 block mb-2">Alamat (Opsional)</label>
+                <textarea 
+                    value={address}
+                    onChange={e => setAddress(e.target.value)}
+                    placeholder="Contoh: Jl. Sudirman No. 10"
+                    rows="2"
+                    className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-colors text-sm"
+                />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="text-sm font-semibold text-slate-700 block mb-2">No. HP Siswa (Opsional)</label>
+                    <input 
+                        type="text" 
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={phone}
+                        onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
+                        placeholder="Contoh: 0812..."
+                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-colors text-sm"
+                    />
+                </div>
+                <div>
+                    <label className="text-sm font-semibold text-slate-700 block mb-2">No. HP Orang Tua (Opsional)</label>
+                    <input 
+                        type="text" 
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={parentPhone}
+                        onChange={e => setParentPhone(e.target.value.replace(/\D/g, ''))}
+                        placeholder="Contoh: 0852..."
+                        className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-colors text-sm"
+                    />
+                </div>
+            </div>
+
+            <div>
+                <label className="text-sm font-semibold text-slate-700 block mb-2">Wali Kelas (Opsional)</label>
+                <input 
+                    type="text" 
+                    value={homeroomTeacher}
+                    onChange={e => setHomeroomTeacher(e.target.value)}
+                    placeholder="Contoh: Bapak/Ibu Guru"
+                    className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-colors text-sm"
+                />
             </div>
             
             <button 

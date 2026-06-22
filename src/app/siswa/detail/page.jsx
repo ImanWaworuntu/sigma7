@@ -132,7 +132,14 @@ function SiswaProfileContent() {
                 </span>
             )}
           </h2>
-          <p className="text-slate-500 font-medium mb-4">Kelas {student.classId || student.class} • NIS: {student.nis || '-'} • NISN: {student.nisn || '-'}</p>
+          <p className="text-slate-500 font-medium mb-1">Kelas {student.classId || student.class} • NIS: {student.nis || '-'} • NISN: {student.nisn || '-'}</p>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-slate-500 mb-4 bg-slate-50 py-2 px-4 rounded-lg w-full max-w-md border border-slate-100">
+            <span className="w-full text-center mb-1 text-slate-400 font-bold uppercase tracking-widest text-[9px]">Biodata Tambahan</span>
+            <span className="flex-1 min-w-[120px] text-left">Wali Kelas: <strong className="text-slate-700 block text-xs">{student.homeroomTeacher || '-'}</strong></span>
+            <span className="flex-1 min-w-[120px] text-left">HP Siswa: <strong className="text-slate-700 block text-xs">{student.phone || '-'}</strong></span>
+            <span className="flex-1 min-w-[120px] text-left">HP Ortu: <strong className="text-slate-700 block text-xs">{student.parentPhone || '-'}</strong></span>
+            <span className="flex-1 min-w-[120px] text-left">Alamat: <strong className="text-slate-700 block text-xs">{student.address || '-'}</strong></span>
+          </div>
           
           <div className="flex w-full gap-3 mb-6">
             <div className="bg-red-50 flex-1 rounded-xl p-3 border border-red-100">

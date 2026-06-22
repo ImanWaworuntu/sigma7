@@ -120,9 +120,17 @@ export const getStudentById = async (studentId) => {
   return null;
 };
 
-export const addStudent = async (studentData) => {
+export const addStudent = async ({ name, classId, nis, nisn, gender, address, phone, parentPhone, homeroomTeacher }) => {
   return await addDoc(collection(db, STUDENTS_COLLECTION), {
-    ...studentData,
+    name, 
+    classId, 
+    nis, 
+    nisn, 
+    gender,
+    address: address || "",
+    phone: phone || "",
+    parentPhone: parentPhone || "",
+    homeroomTeacher: homeroomTeacher || "",
     poinPelanggaran: 0,
     poinPenghargaan: 0,
     spIssuedLevel: 0,
