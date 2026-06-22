@@ -88,13 +88,15 @@ function InputForm() {
         const options = { maxSizeMB: 0.15, maxWidthOrHeight: 1024, useWebWorker: true };
         const compressedFile = await imageCompression(photo, options);
         const storage = getStorage(app);
-        const fileRef = ref(storage, `records/${Date.now()}_${compressedFile.name}`);
+        const fileName = compressedFile.name || photo.name || 'photo.jpg';
+        const safeFileName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+        const fileRef = ref(storage, `records/${Date.now()}_${safeFileName}`);
         await uploadBytes(fileRef, compressedFile);
         photoUrl = await getDownloadURL(fileRef);
       }
 
-      for (const student of selectedStudents) {
-        await addRecord({
+      const promises = selectedStudents.map(student => {
+        return addRecord({
           studentId: student.id,
           studentName: student.name,
           classId: student.classId,
@@ -107,7 +109,9 @@ function InputForm() {
           date: tanggal,
           photoUrl: photoUrl
         });
-      }
+      });
+
+      await Promise.all(promises);
 
       toast.success('Data berhasil disimpan!');
       
@@ -346,19 +350,26 @@ function InputForm() {
             </div>
 
             <div className="mb-6">
-              <label className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${photo ? 'border-primary-500 bg-primary-50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100'}`}>
-                {photo ? (
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <p className="text-xs font-bold text-primary-700">Foto Siap Diupload</p>
-                    <p className="text-[10px] text-primary-600 max-w-[200px] truncate">{photo.name}</p>
-                  </div>
-                ) : (
+              {photo ? (
+                <div className="relative flex flex-col items-center justify-center w-full h-24 border-2 border-primary-500 bg-primary-50 rounded-xl">
+                  <button 
+                    type="button"
+                    onClick={() => setPhoto(null)}
+                    className="absolute top-2 right-2 bg-red-100 text-red-600 p-1.5 rounded-full hover:bg-red-200 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                  <p className="text-xs font-bold text-primary-700">Foto Siap Diupload</p>
+                  <p className="text-[10px] text-primary-600 max-w-[200px] truncate">{photo.name}</p>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-xl cursor-pointer transition-colors">
                   <div className="flex flex-col items-center justify-center">
                     <p className="text-xs font-bold text-slate-500">Ambil Foto Bukti <span className="font-normal">(Opsional)</span></p>
                   </div>
-                )}
-                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
-              </label>
+                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
+                </label>
+              )}
             </div>
 
             <button 
