@@ -15,7 +15,11 @@ function InputForm() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const step = parseInt(searchParams.get('step') || '1');
-  const setStep = (newStep) => router.push(`?step=${newStep}`);
+  const setStep = (newStep) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('step', newStep);
+    router.replace(`?${params.toString()}`);
+  };
 
   const [students, setStudents] = useState([]);
   const [classList, setClassList] = useState([]);
@@ -132,9 +136,9 @@ function InputForm() {
       // Reset
         setTimeout(() => {
           if (searchParams.get('studentId')) {
-             router.push(`/siswa/detail?id=${searchParams.get('studentId')}`);
+             router.replace(`/siswa/detail?id=${searchParams.get('studentId')}`);
           } else {
-             router.push('?step=1');
+             router.replace('/input?step=1');
              setSelectedStudents([]);
              setType(null);
              setSelectedItem(null);
@@ -155,11 +159,16 @@ function InputForm() {
     <main className="flex-1 bg-slate-50 pb-20 flex flex-col h-screen">
       <Toaster />
       {/* Header */}
-      <div className="bg-white px-6 py-4 shadow-sm flex items-center border-b border-slate-100 z-10">
-        <button onClick={() => step > 1 ? setStep(step - 1) : router.push('/dashboard')} className="mr-4 text-slate-500 active:scale-95 transition-transform">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+      <div className="bg-white px-6 py-4 shadow-sm flex items-center justify-between border-b border-slate-100 z-10">
+        <div className="flex items-center">
+          <button onClick={() => step > 1 ? setStep(step - 1) : router.back()} className="mr-4 text-slate-500 active:scale-95 transition-transform">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <h1 className="text-lg font-bold text-slate-800">Input Poin</h1>
+        </div>
+        <button onClick={() => searchParams.get('studentId') ? router.replace(`/siswa/detail?id=${searchParams.get('studentId')}`) : router.replace('/dashboard')} className="text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-100 px-3 py-1.5 rounded-full active:scale-95 transition-transform">
+          Tutup
         </button>
-        <h1 className="text-lg font-bold text-slate-800">Input Poin</h1>
       </div>
 
       <div className="p-6 flex-1 overflow-y-auto">
