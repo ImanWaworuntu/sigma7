@@ -42,9 +42,9 @@ export default function SiswaPage() {
     if (filter === 'Bermasalah') matchFilter = (s.poinPelanggaran || 0) < 0 && !isAlumni;
     else if (filter === 'Berprestasi') matchFilter = (s.poinPenghargaan || 0) > 0 && !isAlumni;
     else if (filter === 'Perlu SP') matchFilter = (s.poinPelanggaran || 0) <= -50 && !isAlumni;
-    else if (filter === 'Kelas X') matchFilter = (s.classId || '').startsWith('X') && !(s.classId || '').startsWith('XI');
-    else if (filter === 'Kelas XI') matchFilter = (s.classId || '').startsWith('XI') && !(s.classId || '').startsWith('XII');
-    else if (filter === 'Kelas XII') matchFilter = (s.classId || '').startsWith('XII') && !isAlumni;
+    else if (filter === 'Kelas X') matchFilter = (s.classId || '').toUpperCase().startsWith('X') && !(s.classId || '').toUpperCase().startsWith('XI') && !(s.classId || '').toUpperCase().startsWith('XII');
+    else if (filter === 'Kelas XI') matchFilter = (s.classId || '').toUpperCase().startsWith('XI') && !(s.classId || '').toUpperCase().startsWith('XII');
+    else if (filter === 'Kelas XII') matchFilter = (s.classId || '').toUpperCase().startsWith('XII') && !isAlumni;
     else if (filter === 'Alumni') matchFilter = isAlumni;
     else if (filter === 'Semua') matchFilter = !isAlumni;
     else matchFilter = s.classId === filter;
