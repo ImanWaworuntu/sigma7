@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import { getStudentById, getRecords, issueSp } from '@/lib/dataService';
+import { getStudentById, getRecords, issueSp, updateStudent, getClasses } from '@/lib/dataService';
+import { toast, Toaster } from 'react-hot-toast';
 
 function SiswaProfileContent() {
   const { user } = useAuth();
@@ -14,11 +15,26 @@ function SiswaProfileContent() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Edit Modal State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [classes, setClasses] = useState([]);
+  const [editForm, setEditForm] = useState({
+    name: '', classId: '', nis: '', nisn: '', gender: '',
+    address: '', phone: '', parentPhone: '', homeroomTeacher: ''
+  });
+  const [submitting, setSubmitting] = useState(false);
+
   useEffect(() => {
     if (studentId) {
       fetchData();
     }
   }, [studentId]);
+
+  useEffect(() => {
+    if (user?.role === 'admin' && showEditModal && classes.length === 0) {
+      getClasses().then(setClasses);
+    }
+  }, [showEditModal, user]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -67,29 +83,69 @@ function SiswaProfileContent() {
   }
 
   const handleMarkSp = async () => {
-    if (pendingSpLevel > 0 && confirm(`Tandai SP ${pendingSpLevel} sudah resmi diberikan kepada siswa ini?`)) {
-      try {
-        await issueSp(studentId, pendingSpLevel);
-        fetchData();
-      } catch (e) {
-        console.error(e);
-      }
+    try {
+      await issueSp(studentId, pendingSpLevel);
+      setStudent(prev => ({ ...prev, spIssuedLevel: pendingSpLevel }));
+      alert(`Sukses menandai bahwa SP ${pendingSpLevel} telah diberikan.`);
+    } catch (error) {
+      alert("Gagal memperbarui status SP.");
     }
   };
 
+  const openEditModal = () => {
+    setEditForm({
+      name: student.name || '',
+      classId: student.classId || student.class || '',
+      nis: student.nis || '',
+      nisn: student.nisn || '',
+      gender: student.gender || '',
+      address: student.address || '',
+      phone: student.phone || '',
+      parentPhone: student.parentPhone || '',
+      homeroomTeacher: student.homeroomTeacher || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateBiodata = async (e) => {
+    e.preventDefault();
+    if (!editForm.name || !editForm.classId || !editForm.gender) {
+      return toast.error("Nama, Kelas, dan Jenis Kelamin wajib diisi!");
+    }
+    
+    setSubmitting(true);
+    try {
+      await updateStudent(studentId, editForm);
+      setStudent(prev => ({ ...prev, ...editForm }));
+      setShowEditModal(false);
+      toast.success("Biodata berhasil diperbarui!");
+    } catch (error) {
+      toast.error("Gagal memperbarui biodata");
+    }
+    setSubmitting(false);
+  };
+
   return (
-    <main className="flex-1 bg-slate-50 pb-20 min-h-screen flex flex-col">
-      {/* Header */}
-      <div className="bg-white px-6 py-4 shadow-sm flex items-center justify-between z-10 print:hidden border-b border-slate-100">
-        <div className="flex items-center">
-          <Link href="/siswa" className="mr-4 text-slate-500 active:scale-95 transition-transform">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
-          <h1 className="text-lg font-bold text-slate-800">Profil Siswa</h1>
+    <main className="flex-1 overflow-y-auto bg-slate-50 pb-20 relative min-h-screen flex flex-col">
+      <Toaster />
+      {/* Header Info */}
+      <div className="bg-primary-600 text-white rounded-b-3xl px-6 pt-10 pb-24 shadow-sm relative">
+        <div className="flex items-center justify-between mb-2">
+            <Link href="/siswa" className="active:scale-95 transition-transform p-2 -ml-2 rounded-full hover:bg-white/10">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            </Link>
+            {user?.role === 'admin' && (
+              <button onClick={openEditModal} className="text-white text-xs font-bold bg-white/20 px-3 py-1.5 rounded-full hover:bg-white/30 active:scale-95 transition-all flex items-center gap-1 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                Edit Biodata
+              </button>
+            )}
         </div>
-        <div className="flex gap-2">
+        <h1 className="text-xl font-bold">Profil Siswa</h1>
+      </div>
+
+      <div className="px-6 -mt-16">
+        <div className="flex justify-end gap-2 mb-4">
           <Link href={`/input?studentId=${studentId}&step=2`} className="bg-primary-600 text-white px-4 py-2 rounded-full shadow-sm hover:bg-primary-700 active:scale-95 transition-all text-xs font-bold flex items-center print:hidden">
             + Input Poin
           </Link>
@@ -99,9 +155,7 @@ function SiswaProfileContent() {
             </svg>
           </button>
         </div>
-      </div>
 
-      <div className="p-6 flex-1">
         {/* Laporan Cetak Header (Hanya muncul saat print) */}
         <div className="hidden print:block text-center mb-8 border-b-2 border-slate-800 pb-4">
           <h1 className="text-2xl font-bold uppercase">Laporan Rekam Jejak Siswa</h1>
@@ -222,6 +276,80 @@ function SiswaProfileContent() {
           </div>
         </div>
       </div>
+
+      {/* MODAL EDIT BIODATA */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-0">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-10 fade-in duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-lg text-slate-800">Edit Biodata Siswa</h3>
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-colors active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateBiodata} className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1">Nama Lengkap</label>
+                <input required type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary-500" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1">Kelas</label>
+                <select required value={editForm.classId} onChange={e => setEditForm({...editForm, classId: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary-500 bg-white">
+                    <option value="">-- Pilih Kelas --</option>
+                    {classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    {editForm.classId?.toUpperCase().startsWith('ALUMNI') && !classes.find(c => c.name === editForm.classId) && (
+                        <option value={editForm.classId}>{editForm.classId}</option>
+                    )}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 block mb-1">NIS</label>
+                  <input type="text" inputMode="numeric" value={editForm.nis} onChange={e => setEditForm({...editForm, nis: e.target.value.replace(/\D/g, '')})} className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 block mb-1">NISN</label>
+                  <input type="text" inputMode="numeric" value={editForm.nisn} onChange={e => setEditForm({...editForm, nisn: e.target.value.replace(/\D/g, '')})} className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary-500" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1">Jenis Kelamin</label>
+                <select required value={editForm.gender} onChange={e => setEditForm({...editForm, gender: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary-500 bg-white">
+                    <option value="">-- Pilih --</option>
+                    <option value="Pria">Pria</option>
+                    <option value="Wanita">Wanita</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1">Alamat</label>
+                <textarea value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} rows="2" className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary-500" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 block mb-1">No. HP Siswa</label>
+                  <input type="text" inputMode="numeric" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value.replace(/\D/g, '')})} className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary-500" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 block mb-1">No. HP Orang Tua</label>
+                  <input type="text" inputMode="numeric" value={editForm.parentPhone} onChange={e => setEditForm({...editForm, parentPhone: e.target.value.replace(/\D/g, '')})} className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary-500" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1">Wali Kelas</label>
+                <input type="text" value={editForm.homeroomTeacher} onChange={e => setEditForm({...editForm, homeroomTeacher: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary-500" />
+              </div>
+              
+              <div className="flex gap-3 mt-4 pt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setShowEditModal(false)} className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl active:scale-95 transition-transform text-sm">Batal</button>
+                <button type="submit" disabled={submitting} className="flex-1 bg-primary-600 text-white font-bold py-3 rounded-xl shadow-md active:scale-95 transition-transform text-sm flex justify-center items-center">
+                  {submitting ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
