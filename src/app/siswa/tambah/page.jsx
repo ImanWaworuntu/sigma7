@@ -77,8 +77,10 @@ export default function TambahSiswa() {
                     <label className="text-sm font-semibold text-slate-700 block mb-2">NIS (Opsional)</label>
                     <input 
                         type="text" 
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={nis}
-                        onChange={e => setNis(e.target.value)}
+                        onChange={e => setNis(e.target.value.replace(/\D/g, ''))}
                         placeholder="Contoh: 10293"
                         className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-colors text-sm"
                     />
@@ -87,8 +89,10 @@ export default function TambahSiswa() {
                     <label className="text-sm font-semibold text-slate-700 block mb-2">NISN (Opsional)</label>
                     <input 
                         type="text" 
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={nisn}
-                        onChange={e => setNisn(e.target.value)}
+                        onChange={e => setNisn(e.target.value.replace(/\D/g, ''))}
                         placeholder="Contoh: 0089201923"
                         className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-colors text-sm"
                     />
