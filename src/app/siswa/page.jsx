@@ -25,7 +25,11 @@ export default function SiswaPage() {
   const handleScroll = (e) => {
     const bottom = e.target.scrollHeight - e.target.scrollTop - e.target.clientHeight < 100;
     if (bottom) {
-      setDisplayLimit(prev => prev + 20);
+      setDisplayLimit(prev => {
+        // Prevent infinite state updates if we've already loaded all students
+        if (prev < students.length) return prev + 20;
+        return prev;
+      });
     }
   };
 
