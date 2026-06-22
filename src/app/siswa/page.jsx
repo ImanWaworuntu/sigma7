@@ -129,18 +129,18 @@ export default function SiswaPage() {
 
               return (
                 <Link href={`/siswa/detail?id=${student.id}`} key={student.id} className={`rounded-xl p-4 shadow-sm border flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all group block cursor-pointer ${cardBg}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
+                  <div className="flex items-center gap-3 flex-1 min-w-0 mr-3">
+                    <div className="relative shrink-0">
                       <div className={`h-12 w-12 rounded-full flex items-center justify-center font-bold text-lg ${statusColor}`}>
                         {student.name.charAt(0)}
                       </div>
                     </div>
-                    <div>
-                      <p className={`font-bold leading-tight transition-colors ${nameColor}`}>{student.name}</p>
-                      <p className="text-xs text-slate-500 mt-1">{student.classId}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className={`font-bold leading-tight transition-colors truncate ${nameColor}`} title={student.name}>{student.name}</p>
+                      <p className="text-xs text-slate-500 mt-1 truncate">{student.classId}</p>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end w-24">
+                  <div className="flex flex-col items-end w-24 shrink-0">
                     <div className="w-full flex items-center justify-between text-[10px] font-bold text-red-600 mb-0.5">
                       <span>Pelanggaran</span>
                       <span>{hpMerah}</span>
