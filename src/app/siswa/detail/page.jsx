@@ -209,45 +209,45 @@ function SiswaProfileContent() {
             </div>
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 text-left border-b border-slate-200/80 pb-2">Informasi Kontak & Biodata</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left relative z-10">
-                <div className="flex items-start gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200 group">
-                    <div className="bg-primary-50 p-2.5 rounded-lg text-primary-600 shrink-0 group-hover:bg-primary-600 group-hover:text-white transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            <div className="flex flex-col gap-3 text-left relative z-10 w-full">
+                <div className="flex items-center justify-between gap-4 bg-white p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200 group w-full">
+                    <div className="flex items-center gap-3 shrink-0">
+                        <div className="bg-primary-50 p-2.5 rounded-lg text-primary-600 group-hover:bg-primary-600 group-hover:text-white transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        </div>
+                        <span className="text-xs font-bold uppercase text-slate-500 tracking-wider">Wali Kelas</span>
                     </div>
-                    <div className="min-w-0">
-                      <span className="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Wali Kelas</span>
-                      <strong className="text-slate-700 text-sm font-semibold break-words block">{student.homeroomTeacher || '-'}</strong>
-                    </div>
+                    <strong className="text-slate-800 text-sm md:text-base font-bold text-right break-words max-w-[55%]">{student.homeroomTeacher || '-'}</strong>
                 </div>
                 
-                <div className="flex items-start gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200 group">
-                    <div className="bg-green-50 p-2.5 rounded-lg text-green-600 shrink-0 group-hover:bg-green-600 group-hover:text-white transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                <div className="flex items-center justify-between gap-4 bg-white p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200 group w-full">
+                    <div className="flex items-center gap-3 shrink-0">
+                        <div className="bg-green-50 p-2.5 rounded-lg text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                        </div>
+                        <span className="text-xs font-bold uppercase text-slate-500 tracking-wider">HP Siswa</span>
                     </div>
-                    <div className="min-w-0">
-                      <span className="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">HP Siswa</span>
-                      <strong className="text-slate-700 text-sm font-semibold break-all block">{student.phone || '-'}</strong>
-                    </div>
+                    <strong className="text-slate-800 text-sm md:text-base font-bold text-right break-words max-w-[55%]">{student.phone || '-'}</strong>
                 </div>
                 
-                <div className="flex items-start gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200 group">
-                    <div className="bg-purple-50 p-2.5 rounded-lg text-purple-600 shrink-0 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                <div className="flex items-center justify-between gap-4 bg-white p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200 group w-full">
+                    <div className="flex items-center gap-3 shrink-0">
+                        <div className="bg-purple-50 p-2.5 rounded-lg text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                        </div>
+                        <span className="text-xs font-bold uppercase text-slate-500 tracking-wider">HP Ortu</span>
                     </div>
-                    <div className="min-w-0">
-                      <span className="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">HP Orang Tua</span>
-                      <strong className="text-slate-700 text-sm font-semibold break-all block">{student.parentPhone || '-'}</strong>
-                    </div>
+                    <strong className="text-slate-800 text-sm md:text-base font-bold text-right break-words max-w-[55%]">{student.parentPhone || '-'}</strong>
                 </div>
                 
-                <div className="flex items-start gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200 group">
-                    <div className="bg-orange-50 p-2.5 rounded-lg text-orange-600 shrink-0 group-hover:bg-orange-600 group-hover:text-white transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <div className="flex items-center justify-between gap-4 bg-white p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-slate-200 group w-full">
+                    <div className="flex items-center gap-3 shrink-0">
+                        <div className="bg-orange-50 p-2.5 rounded-lg text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </div>
+                        <span className="text-xs font-bold uppercase text-slate-500 tracking-wider">Alamat</span>
                     </div>
-                    <div className="min-w-0">
-                      <span className="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Alamat</span>
-                      <strong className="text-slate-700 text-sm font-semibold break-words block">{student.address || '-'}</strong>
-                    </div>
+                    <strong className="text-slate-800 text-sm md:text-base font-bold text-right break-words max-w-[60%]">{student.address || '-'}</strong>
                 </div>
             </div>
           </div>
