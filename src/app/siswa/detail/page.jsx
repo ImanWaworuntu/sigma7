@@ -181,10 +181,24 @@ function SiswaProfileContent() {
                   </div>
                   <div className="flex-1">
                     <p className="font-bold text-slate-800 leading-tight mb-1">{record.description || record.desc}</p>
-                    <p className="text-xs font-semibold text-slate-500">{record.date}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-semibold text-slate-500">{record.date}</p>
+                      <span className="text-[10px] text-slate-400 border-l border-slate-300 pl-2 ml-1 flex-shrink-0">Oleh: {record.reportedBy || 'Sistem'}</span>
+                      {record.photoUrl && (
+                        <a 
+                          href={record.photoUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-1 print:hidden"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                          Lihat Bukti
+                        </a>
+                      )}
+                    </div>
                   </div>
-                  <div className={`font-black ${record.type === 'reward' ? 'text-reward-600' : 'text-violation-600'}`}>
-                    {record.points > 0 ? '+' : ''}{record.points}
+                  <div className={`font-black flex flex-col items-end justify-center ${record.type === 'reward' ? 'text-reward-600' : 'text-violation-600'}`}>
+                    <span>{record.points > 0 ? '+' : ''}{record.points}</span>
                   </div>
                 </div>
               ))

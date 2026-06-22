@@ -8,10 +8,12 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { app, db } from '@/lib/firebase';
 import imageCompression from 'browser-image-compression';
 import { toast, Toaster } from 'react-hot-toast';
+import { useAuth } from '@/lib/AuthContext';
 
 function InputForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const step = parseInt(searchParams.get('step') || '1');
   const setStep = (newStep) => router.push(`?step=${newStep}`);
 
@@ -97,7 +99,8 @@ function InputForm() {
           category: selectedItem.category,
           points: type === 'reward' ? selectedItem.points : -Math.abs(selectedItem.points),
           date: tanggal,
-          photoUrl: '' // sementara kosong, akan diisi oleh background task
+          photoUrl: '', // sementara kosong, akan diisi oleh background task
+          reportedBy: user?.username || 'Sistem'
         });
       });
 

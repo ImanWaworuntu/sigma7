@@ -349,13 +349,14 @@ export default function RekapitulasiLanjutan() {
                    <th className="p-3 font-semibold">Nama Siswa</th>
                    <th className="p-3 font-semibold">Kelas</th>
                    <th className="p-3 font-semibold">Deskripsi</th>
+                   <th className="p-3 font-semibold">Dibuat Oleh</th>
                    <th className="p-3 font-semibold rounded-tr-lg">Poin</th>
                  </tr>
                </thead>
                <tbody>
                  {filteredRecords.length === 0 ? (
                    <tr>
-                     <td colSpan="5" className="p-8 text-center text-slate-400">Tidak ada data pada periode ini</td>
+                     <td colSpan="6" className="p-8 text-center text-slate-400">Tidak ada data pada periode ini</td>
                    </tr>
                  ) : (
                    filteredRecords.map(r => (
@@ -366,6 +367,7 @@ export default function RekapitulasiLanjutan() {
                        </td>
                        <td className="p-3 text-slate-600">{r.className}</td>
                        <td className="p-3 text-slate-600 max-w-[200px] truncate" title={r.description}>{r.description}</td>
+                       <td className="p-3 text-slate-600 text-xs italic">{r.reportedBy || 'Sistem'}</td>
                        <td className="p-3 font-bold">
                          <span className={`px-2 py-1 rounded text-xs ${r.points < 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
                            {r.points > 0 ? `+${r.points}` : r.points}
@@ -421,6 +423,7 @@ export default function RekapitulasiLanjutan() {
                         <th className="py-1 px-2 w-10">No</th>
                         <th className="py-1 px-2 w-24">Tanggal</th>
                         <th className="py-1 px-2">Deskripsi</th>
+                        <th className="py-1 px-2">Pelapor</th>
                         <th className="py-1 px-2 w-16">Poin</th>
                         <th className="py-1 px-2 w-24">Tipe</th>
                       </tr>
@@ -431,6 +434,7 @@ export default function RekapitulasiLanjutan() {
                           <td className="py-1 px-2">{idx + 1}</td>
                           <td className="py-1 px-2">{r.date || r.createdAt.split('T')[0]}</td>
                           <td className="py-1 px-2 break-words text-justify pr-4">{r.description}</td>
+                          <td className="py-1 px-2 truncate max-w-[80px]">{r.reportedBy || '-'}</td>
                           <td className="py-1 px-2 font-bold">{r.points > 0 ? `+${r.points}` : r.points}</td>
                           <td className="py-1 px-2">{r.points > 0 ? 'Penghargaan' : 'Pelanggaran'}</td>
                         </tr>
@@ -486,6 +490,7 @@ export default function RekapitulasiLanjutan() {
                                 <th className="py-1 px-2 w-10">No</th>
                                 <th className="py-1 px-2 w-24">Tanggal</th>
                                 <th className="py-1 px-2">Deskripsi</th>
+                                <th className="py-1 px-2">Pelapor</th>
                                 <th className="py-1 px-2 w-16">Poin</th>
                                 <th className="py-1 px-2 w-24">Tipe</th>
                               </tr>
@@ -496,6 +501,7 @@ export default function RekapitulasiLanjutan() {
                                   <td className="py-1 px-2">{idx + 1}</td>
                                   <td className="py-1 px-2">{r.date || r.createdAt.split('T')[0]}</td>
                                   <td className="py-1 px-2 break-words text-justify pr-4">{r.description}</td>
+                                  <td className="py-1 px-2 truncate max-w-[80px]">{r.reportedBy || '-'}</td>
                                   <td className="py-1 px-2 font-bold">{r.points > 0 ? `+${r.points}` : r.points}</td>
                                   <td className="py-1 px-2">{r.points > 0 ? 'Penghargaan' : 'Pelanggaran'}</td>
                                 </tr>
