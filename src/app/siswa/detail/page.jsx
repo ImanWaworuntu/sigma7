@@ -128,7 +128,7 @@ function SiswaProfileContent() {
   return (
     <main className="flex-1 overflow-y-auto bg-slate-50 pb-20 relative min-h-screen flex flex-col">
       <Toaster />
-      <div className="bg-gradient-to-br from-primary-600 to-primary-800 text-white rounded-b-3xl px-6 pt-10 pb-20 shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-br from-primary-600 to-primary-800 text-white rounded-b-3xl px-6 pt-10 pb-20 shadow-lg relative overflow-hidden print:hidden">
         {/* Decorative glass circles */}
         <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
         <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-white/10 blur-xl"></div>
@@ -173,10 +173,20 @@ function SiswaProfileContent() {
 
       <div className="p-6 flex-1 -mt-2">
         {/* Laporan Cetak Header (Hanya muncul saat print) */}
-        <div className="hidden print:block text-center mb-8 border-b-2 border-slate-800 pb-4">
-          <h1 className="text-2xl font-bold uppercase">Laporan Rekam Jejak Siswa</h1>
-          <h2 className="text-lg font-bold">SMAN 7 Makassar</h2>
-          <p className="text-sm">Sistem Siswa Integrasi & Garda Moral (SIGMA 7)</p>
+        <div className="hidden print:block mb-8">
+          <div className="text-center border-b-2 border-slate-800 pb-4 mb-6">
+            <h1 className="text-2xl font-bold uppercase">Laporan Rekam Jejak Siswa</h1>
+            <h2 className="text-lg font-bold">SMAN 7 Makassar</h2>
+            <p className="text-sm">Sistem Siswa Integrasi & Garda Moral (SIGMA 7)</p>
+          </div>
+          <div className="flex flex-col items-center text-center">
+            <h3 className="text-2xl font-black mb-2">{student.name}</h3>
+            <div className="flex gap-4 text-sm font-bold">
+              <span>Kelas: {student.classId || student.class}</span>
+              <span>NIS: {student.nis || '-'}</span>
+              <span>NISN: {student.nisn || '-'}</span>
+            </div>
+          </div>
         </div>
 
         {/* Warning Banner */}
