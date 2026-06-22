@@ -146,8 +146,14 @@ function SiswaProfileContent() {
             )}
         </div>
         <div className="relative z-10 text-center mt-2">
-            <h1 className="text-2xl font-black tracking-tight drop-shadow-sm">PROFIL SISWA</h1>
-            <p className="text-primary-100 text-xs font-medium mt-1 opacity-80 uppercase tracking-widest">SMAN 7 Makassar</p>
+            <h1 className="text-3xl font-black tracking-tight drop-shadow-md mb-3">{student.name}</h1>
+            <div className="inline-flex flex-wrap justify-center gap-2 text-[11px] font-medium opacity-90 uppercase tracking-widest bg-white/20 px-5 py-2 rounded-full backdrop-blur-sm border border-white/20">
+                <span>Kelas {student.classId || student.class}</span>
+                <span className="opacity-50">•</span>
+                <span>NIS: {student.nis || '-'}</span>
+                <span className="opacity-50">•</span>
+                <span>NISN: {student.nisn || '-'}</span>
+            </div>
         </div>
       </div>
 
@@ -185,24 +191,53 @@ function SiswaProfileContent() {
 
         {/* Profile Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6 flex flex-col items-center text-center relative print:shadow-none print:border-slate-300">
-          <div className={`h-24 w-24 rounded-full flex items-center justify-center text-4xl font-bold mb-4 ${student.gender === 'Wanita' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
-            {student.name.charAt(0)}
-          </div>
-          <h2 className={`text-2xl font-bold flex items-center gap-2 ${student.gender === 'Wanita' ? 'text-pink-500' : 'text-blue-600'}`}>
-            {student.name}
-            {hpMerah >= 50 && (
-                <span className="text-red-500 text-lg tracking-tighter" title="Terindikasi Peringatan SP">
+          
+          {/* Warning SP Indicators */}
+          {hpMerah >= 50 && (
+            <div className="mb-4 flex items-center justify-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-full border border-red-100 text-sm font-bold shadow-sm">
+                <span className="text-lg tracking-tighter">
                     {hpMerah >= 200 ? '⚠️⚠️⚠️' : hpMerah >= 150 ? '⚠️⚠️' : '⚠️'}
                 </span>
-            )}
-          </h2>
-          <p className="text-slate-500 font-medium mb-1">Kelas {student.classId || student.class} • NIS: {student.nis || '-'} • NISN: {student.nisn || '-'}</p>
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-slate-500 mb-4 bg-slate-50 py-2 px-4 rounded-lg w-full max-w-md border border-slate-100">
-            <span className="w-full text-center mb-1 text-slate-400 font-bold uppercase tracking-widest text-[9px]">Biodata Tambahan</span>
-            <span className="flex-1 min-w-[120px] text-left">Wali Kelas: <strong className="text-slate-700 block text-xs">{student.homeroomTeacher || '-'}</strong></span>
-            <span className="flex-1 min-w-[120px] text-left">HP Siswa: <strong className="text-slate-700 block text-xs">{student.phone || '-'}</strong></span>
-            <span className="flex-1 min-w-[120px] text-left">HP Ortu: <strong className="text-slate-700 block text-xs">{student.parentPhone || '-'}</strong></span>
-            <span className="flex-1 min-w-[120px] text-left">Alamat: <strong className="text-slate-700 block text-xs">{student.address || '-'}</strong></span>
+                <span>Terindikasi Peringatan SP</span>
+            </div>
+          )}
+
+          {/* Premium Biodata Card */}
+          <div className="w-full bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 mb-6 border border-slate-200/60 relative overflow-hidden shadow-inner">
+            <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none transform translate-x-4 -translate-y-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-32 w-32" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            </div>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 text-left border-b border-slate-200/80 pb-2">Informasi Kontak & Biodata</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left relative z-10">
+                <div>
+                    <span className="block text-[10px] font-bold uppercase text-slate-400 mb-1 flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                      Wali Kelas
+                    </span>
+                    <strong className="text-slate-700 text-sm font-semibold">{student.homeroomTeacher || '-'}</strong>
+                </div>
+                <div>
+                    <span className="block text-[10px] font-bold uppercase text-slate-400 mb-1 flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                      HP Siswa
+                    </span>
+                    <strong className="text-slate-700 text-sm font-semibold">{student.phone || '-'}</strong>
+                </div>
+                <div>
+                    <span className="block text-[10px] font-bold uppercase text-slate-400 mb-1 flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                      HP Orang Tua
+                    </span>
+                    <strong className="text-slate-700 text-sm font-semibold">{student.parentPhone || '-'}</strong>
+                </div>
+                <div>
+                    <span className="block text-[10px] font-bold uppercase text-slate-400 mb-1 flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      Alamat
+                    </span>
+                    <strong className="text-slate-700 text-sm font-semibold">{student.address || '-'}</strong>
+                </div>
+            </div>
           </div>
           
           <div className="flex w-full gap-3 mb-6">
