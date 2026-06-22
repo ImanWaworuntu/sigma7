@@ -165,6 +165,7 @@ function SiswaProfileContent() {
         </div>
       </div>
 
+      <div className="p-6 flex-1 -mt-2">
         {/* Laporan Cetak Header (Hanya muncul saat print) */}
         <div className="hidden print:block text-center mb-8 border-b-2 border-slate-800 pb-4">
           <h1 className="text-2xl font-bold uppercase">Laporan Rekam Jejak Siswa</h1>
