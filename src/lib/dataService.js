@@ -301,10 +301,37 @@ export const getRecords = async (filters = {}) => {
 
 // --- ATTENDANCE (Upacara) ---
 export const saveAttendance = async (attendanceData) => {
-  return await addDoc(collection(db, ATTENDANCE_COLLECTION), {
+  const result = await addDoc(collection(db, ATTENDANCE_COLLECTION), {
     ...attendanceData,
     createdAt: new Date().toISOString()
   });
+
+  // Auto-tambah poin pelanggaran jika Alpa atau Bolos
+  if (attendanceData.status === 'Alpa' || attendanceData.status === 'Bolos') {
+    let points = attendanceData.status === 'Alpa' ? -10 : -20; // Default points
+    try {
+      const qRule = query(collection(db, RULES_COLLECTION), where('name', '==', attendanceData.status === 'Alpa' ? 'Alpa Upacara' : 'Bolos Upacara'));
+      const ruleSnap = await getDocs(qRule);
+      if (!ruleSnap.empty) {
+        points = ruleSnap.docs[0].data().points;
+      }
+    } catch (e) {
+      console.error("Error fetching rule for attendance:", e);
+    }
+
+    await addRecord({
+      studentId: attendanceData.studentId,
+      studentName: attendanceData.studentName,
+      className: attendanceData.className,
+      type: 'pelanggaran',
+      action: `${attendanceData.status} Upacara`,
+      points: points,
+      notes: `Dibuat otomatis dari sistem absensi upacara pada ${attendanceData.date}`,
+      date: attendanceData.date
+    });
+  }
+
+  return result;
 };
 
 export const getTopAbsences = async (limitCount = 5) => {

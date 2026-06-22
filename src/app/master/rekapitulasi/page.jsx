@@ -121,6 +121,25 @@ export default function RekapitulasiLanjutan() {
     return Object.values(map).sort((a,b) => b.value - a.value).slice(0, 8); // Top 8
   }, [filteredRecords]);
 
+  // 4. Class Summary Table Data
+  const classSummaryData = useMemo(() => {
+      const map = {};
+      filteredRecords.forEach(r => {
+          const cName = r.className || 'Tidak Diketahui';
+          if (!map[cName]) map[cName] = { className: cName, pelanggaran: 0, penghargaan: 0, studentCount: new Set() };
+          
+          if (r.points < 0) map[cName].pelanggaran += Math.abs(r.points);
+          else if (r.points > 0) map[cName].penghargaan += r.points;
+
+          map[cName].studentCount.add(r.studentId);
+      });
+      return Object.values(map).map(c => ({
+          ...c,
+          studentCount: c.studentCount.size,
+          netScore: c.penghargaan - c.pelanggaran
+      })).sort((a,b) => b.netScore - a.netScore);
+  }, [filteredRecords]);
+
   // --- GROUPED DATA FOR PRINTING ---
   const groupedDataToPrint = useMemo(() => {
     const groupedData = {}; // { jenjang: { className: { studentName: { points, records: [] } } } }
@@ -332,6 +351,53 @@ export default function RekapitulasiLanjutan() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* CLASS PERFORMANCE SUMMARY TABLE */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+           <h2 className="font-bold text-slate-800 mb-4 text-sm flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                Laporan Performa Kelas Khusus Rapat
+              </span>
+              <span className="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-1 rounded-full">{classSummaryData.length} Kelas Terdata</span>
+           </h2>
+           <div className="overflow-x-auto">
+             <table className="w-full text-left text-sm">
+               <thead>
+                 <tr className="bg-slate-50 text-slate-500 border-b border-slate-200">
+                   <th className="p-3 font-semibold rounded-tl-lg">Peringkat</th>
+                   <th className="p-3 font-semibold">Nama Kelas</th>
+                   <th className="p-3 font-semibold text-center">Siswa Bermasalah/Berprestasi</th>
+                   <th className="p-3 font-semibold text-right">Poin Pelanggaran</th>
+                   <th className="p-3 font-semibold text-right">Poin Penghargaan</th>
+                   <th className="p-3 font-semibold text-right rounded-tr-lg">Net Score</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {classSummaryData.length === 0 ? (
+                   <tr>
+                     <td colSpan="6" className="p-8 text-center text-slate-400">Tidak ada data kelas pada periode ini</td>
+                   </tr>
+                 ) : (
+                   classSummaryData.map((c, idx) => (
+                     <tr key={c.className} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                       <td className="p-3 font-bold text-slate-500">#{idx + 1}</td>
+                       <td className="p-3 font-bold text-slate-800">{c.className}</td>
+                       <td className="p-3 text-center text-slate-600">{c.studentCount} Siswa</td>
+                       <td className="p-3 text-right text-red-600 font-bold">{c.pelanggaran > 0 ? `-${c.pelanggaran}` : 0}</td>
+                       <td className="p-3 text-right text-green-600 font-bold">{c.penghargaan > 0 ? `+${c.penghargaan}` : 0}</td>
+                       <td className="p-3 text-right font-black">
+                         <span className={`px-2 py-1 rounded text-xs ${c.netScore < 0 ? 'bg-red-50 text-red-600' : c.netScore > 0 ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-600'}`}>
+                           {c.netScore > 0 ? `+${c.netScore}` : c.netScore}
+                         </span>
+                       </td>
+                     </tr>
+                   ))
+                 )}
+               </tbody>
+             </table>
+           </div>
         </div>
 
         {/* FULL DATA TABLE */}

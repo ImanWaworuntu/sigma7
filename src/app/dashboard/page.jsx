@@ -10,9 +10,18 @@ import { getStudents } from '@/lib/dataService';
 export default function Home() {
   const { user, logout } = useAuth();
   const [timeFilter, setTimeFilter] = useState('week'); // today, week, month, year
-  const [topPelanggaran, setTopPelanggaran] = useState([]);
-  const [topPrestasi, setTopPrestasi] = useState([]);
-  const [topAbsences, setTopAbsences] = useState([]);
+  
+  // 7 Leaderboards
+  const [topSiswaBermasalah, setTopSiswaBermasalah] = useState([]);
+  const [topKelasBermasalah, setTopKelasBermasalah] = useState([]);
+  const [topSiswaPanutan, setTopSiswaPanutan] = useState([]);
+  const [topKelasPanutan, setTopKelasPanutan] = useState([]);
+  const [topSiswaAlpa, setTopSiswaAlpa] = useState([]);
+  const [topSiswaBolos, setTopSiswaBolos] = useState([]);
+  const [topSiswaIzin, setTopSiswaIzin] = useState([]);
+
+  const [expandedClass, setExpandedClass] = useState(null);
+
   const [spStudents, setSpStudents] = useState([]);
   const [studentIndicators, setStudentIndicators] = useState({});
   const [studentGenders, setStudentGenders] = useState({});
@@ -49,7 +58,6 @@ export default function Home() {
       setStudentIndicators(indicatorMap);
       setStudentGenders(genderMap);
 
-      // Fetch ALL records for the period to avoid complex composite index requirements
       const qRecords = query(
         collection(db, 'records'),
         where('createdAt', '>=', isoStartDate)
@@ -58,15 +66,13 @@ export default function Home() {
       
       const studentMapPelanggaran = {};
       const studentMapPrestasi = {};
+      const classMapPelanggaran = {};
+      const classMapPrestasi = {};
 
       snapRecords.docs.forEach(doc => {
           const data = doc.data();
-          
-          // Skip if student has been deleted from database
           if (!classMap.hasOwnProperty(data.studentId)) return;
-
           const currentClass = classMap[data.studentId] || data.className || '';
-          
           if (currentClass.toUpperCase().startsWith('ALUMNI')) return;
 
           if (data.points < 0) {
@@ -74,42 +80,75 @@ export default function Home() {
                   studentMapPelanggaran[data.studentId] = { id: data.studentId, name: data.studentName, class: currentClass, points: 0 };
               }
               studentMapPelanggaran[data.studentId].points += data.points;
+              
+              if (!classMapPelanggaran[currentClass]) {
+                  classMapPelanggaran[currentClass] = { className: currentClass, points: 0, contributors: {} };
+              }
+              classMapPelanggaran[currentClass].points += data.points;
+              if (!classMapPelanggaran[currentClass].contributors[data.studentId]) {
+                  classMapPelanggaran[currentClass].contributors[data.studentId] = { id: data.studentId, name: data.studentName, points: 0 };
+              }
+              classMapPelanggaran[currentClass].contributors[data.studentId].points += data.points;
+
           } else if (data.points > 0) {
               if (!studentMapPrestasi[data.studentId]) {
                   studentMapPrestasi[data.studentId] = { id: data.studentId, name: data.studentName, class: currentClass, points: 0 };
               }
               studentMapPrestasi[data.studentId].points += data.points;
+              
+              if (!classMapPrestasi[currentClass]) {
+                  classMapPrestasi[currentClass] = { className: currentClass, points: 0, contributors: {} };
+              }
+              classMapPrestasi[currentClass].points += data.points;
+              if (!classMapPrestasi[currentClass].contributors[data.studentId]) {
+                  classMapPrestasi[currentClass].contributors[data.studentId] = { id: data.studentId, name: data.studentName, points: 0 };
+              }
+              classMapPrestasi[currentClass].contributors[data.studentId].points += data.points;
           }
       });
 
-      const arrPelanggaran = Object.values(studentMapPelanggaran).sort((a, b) => a.points - b.points).slice(0, 5);
-      const arrPrestasi = Object.values(studentMapPrestasi).sort((a, b) => b.points - a.points).slice(0, 5);
+      setTopSiswaBermasalah(Object.values(studentMapPelanggaran).sort((a, b) => a.points - b.points).slice(0, 5));
+      setTopSiswaPanutan(Object.values(studentMapPrestasi).sort((a, b) => b.points - a.points).slice(0, 5));
+      
+      setTopKelasBermasalah(Object.values(classMapPelanggaran).sort((a, b) => a.points - b.points).slice(0, 5).map(c => ({
+          ...c,
+          topContributors: Object.values(c.contributors).sort((a, b) => a.points - b.points).slice(0, 5)
+      })));
+      setTopKelasPanutan(Object.values(classMapPrestasi).sort((a, b) => b.points - a.points).slice(0, 5).map(c => ({
+          ...c,
+          topContributors: Object.values(c.contributors).sort((a, b) => b.points - a.points).slice(0, 5)
+      })));
 
-      // Fetch Upacara Absences
       const qAbsence = query(
         collection(db, 'attendance'),
         where('createdAt', '>=', isoStartDate)
       );
       const snapAbsence = await getDocs(qAbsence);
-      const absMap = {};
+      const absMapAlpa = {};
+      const absMapBolos = {};
+      const absMapIzin = {};
+
       snapAbsence.docs.forEach(doc => {
           const data = doc.data();
-          
-          // Skip if student has been deleted from database
           if (!classMap.hasOwnProperty(data.studentId)) return;
-
           const currentClass = classMap[data.studentId] || data.className || '';
-          
           if (currentClass.toUpperCase().startsWith('ALUMNI')) return;
 
-          if (data.status !== 'Hadir') {
-              if(!absMap[data.studentId]) absMap[data.studentId] = { id: data.studentId, name: data.studentName, class: currentClass, count: 0 };
-              absMap[data.studentId].count += 1;
+          if (data.status === 'Alpa') {
+              if(!absMapAlpa[data.studentId]) absMapAlpa[data.studentId] = { id: data.studentId, name: data.studentName, class: currentClass, count: 0 };
+              absMapAlpa[data.studentId].count += 1;
+          } else if (data.status === 'Bolos') {
+              if(!absMapBolos[data.studentId]) absMapBolos[data.studentId] = { id: data.studentId, name: data.studentName, class: currentClass, count: 0 };
+              absMapBolos[data.studentId].count += 1;
+          } else if (data.status === 'Izin') {
+              if(!absMapIzin[data.studentId]) absMapIzin[data.studentId] = { id: data.studentId, name: data.studentName, class: currentClass, count: 0 };
+              absMapIzin[data.studentId].count += 1;
           }
       });
-      const arrAbsence = Object.values(absMap).sort((a,b) => b.count - a.count).slice(0, 5);
+      setTopSiswaAlpa(Object.values(absMapAlpa).sort((a,b) => b.count - a.count).slice(0, 5));
+      setTopSiswaBolos(Object.values(absMapBolos).sort((a,b) => b.count - a.count).slice(0, 5));
+      setTopSiswaIzin(Object.values(absMapIzin).sort((a,b) => b.count - a.count).slice(0, 5));
 
-      // Fetch SP Students (HP Merah <= 150 means poinPelanggaran <= -50)
       const qSP = query(
         collection(db, 'students'),
         where('poinPelanggaran', '<=', -50),
@@ -118,7 +157,6 @@ export default function Home() {
       const snapSP = await getDocs(qSP);
       const arrSP = snapSP.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(student => {
           if ((student.classId || '').toUpperCase().startsWith('ALUMNI')) return false;
-          
           const hpMerah = Math.abs(student.poinPelanggaran || 0);
           const issued = student.spIssuedLevel || 0;
           if (hpMerah >= 200 && issued < 3) return true;
@@ -126,10 +164,6 @@ export default function Home() {
           if (hpMerah >= 50 && hpMerah < 150 && issued < 1) return true;
           return false;
       });
-
-      setTopPelanggaran(arrPelanggaran);
-      setTopPrestasi(arrPrestasi);
-      setTopAbsences(arrAbsence);
       setSpStudents(arrSP);
     } catch (error) {
       console.error("Error fetching top records:", error);
@@ -137,11 +171,125 @@ export default function Home() {
     setLoading(false);
   };
 
+  const toggleAccordion = (classId) => {
+    if (expandedClass === classId) setExpandedClass(null);
+    else setExpandedClass(classId);
+  };
+
+  const renderStudentItem = (item, i, type = 'pelanggaran') => {
+      const hpMerah = Math.abs(item.points || item.poinPelanggaran || 0);
+      let cardBg = 'hover:bg-slate-50';
+      if (type === 'pelanggaran') {
+          if (hpMerah >= 150) cardBg = 'bg-red-50 hover:bg-red-100 border-red-200';
+          else if (hpMerah >= 50) cardBg = 'bg-orange-50 hover:bg-orange-100 border-orange-200';
+      }
+      
+      let nameColor = 'text-slate-800';
+      if (studentGenders[item.id] === 'Wanita') nameColor = 'text-pink-600';
+      else if (studentGenders[item.id] === 'Pria') nameColor = 'text-blue-600';
+
+      const maxP = type === 'pelanggaran' ? Math.min(...topSiswaBermasalah.map(x=>x.points)) || -1 : Math.max(...topSiswaPanutan.map(x=>x.points)) || 1;
+      const percentage = Math.min(100, Math.max(0, (item.points / maxP) * 100));
+
+      return (
+        <Link href={`/siswa/detail?id=${item.id}`} key={i} className={`relative p-3 border-b border-slate-50 last:border-0 transition-colors group overflow-hidden block ${cardBg}`}>
+            <div className={`absolute top-0 left-0 h-full ${type === 'pelanggaran' ? 'bg-violation-50/30' : 'bg-reward-50/50'} -z-10 transition-all duration-500`} style={{ width: `${percentage}%` }}></div>
+            <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-3">
+                <div className={`h-7 w-7 rounded font-bold flex items-center justify-center text-xs group-hover:scale-110 transition-transform shadow-sm ${type === 'pelanggaran' ? 'bg-violation-50 text-violation-600' : 'bg-reward-50 text-reward-600'}`}>
+                    #{i+1}
+                </div>
+                <div>
+                    <p className={`font-bold text-sm leading-tight flex items-center gap-1 ${nameColor}`}>
+                      {item.name}
+                      {studentIndicators[item.id] && <span className="text-red-500 text-[10px] tracking-tighter" title="Terindikasi Peringatan SP">{studentIndicators[item.id]}</span>}
+                    </p>
+                    <p className="text-[10px] text-slate-500">{item.class || item.classId}</p>
+                </div>
+                </div>
+                <div className={`font-black text-sm px-2 py-1 rounded-md ${type === 'pelanggaran' ? 'text-violation-600 bg-violation-50' : 'text-reward-600 bg-reward-50'}`}>
+                {type === 'prestasi' ? '+' : ''}{item.points}
+                </div>
+            </div>
+        </Link>
+      );
+  };
+
+  const renderClassItem = (item, i, type = 'pelanggaran') => {
+      const isExpanded = expandedClass === `${type}-${item.className}`;
+      const maxP = type === 'pelanggaran' ? Math.min(...topKelasBermasalah.map(x=>x.points)) || -1 : Math.max(...topKelasPanutan.map(x=>x.points)) || 1;
+      const percentage = Math.min(100, Math.max(0, (item.points / maxP) * 100));
+
+      return (
+        <div key={i} className="border-b border-slate-100 last:border-0">
+            <div onClick={() => toggleAccordion(`${type}-${item.className}`)} className="relative p-3 hover:bg-slate-50 transition-colors group overflow-hidden cursor-pointer">
+                <div className={`absolute top-0 left-0 h-full ${type === 'pelanggaran' ? 'bg-violation-50/30' : 'bg-reward-50/50'} -z-10 transition-all duration-500`} style={{ width: `${percentage}%` }}></div>
+                <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-3">
+                        <div className={`h-7 w-7 rounded font-bold flex items-center justify-center text-xs shadow-sm ${type === 'pelanggaran' ? 'bg-violation-50 text-violation-600' : 'bg-reward-50 text-reward-600'}`}>
+                            #{i+1}
+                        </div>
+                        <div>
+                            <p className="font-bold text-sm leading-tight text-slate-800">Kelas {item.className}</p>
+                            <p className="text-[10px] text-slate-500">Klik untuk melihat kontributor</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className={`font-black text-sm px-2 py-1 rounded-md ${type === 'pelanggaran' ? 'text-violation-600 bg-violation-50' : 'text-reward-600 bg-reward-50'}`}>
+                            {type === 'prestasi' ? '+' : ''}{item.points}
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                </div>
+            </div>
+            {isExpanded && (
+                <div className="bg-slate-50 p-3 pt-1 border-t border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider">Top Kontributor</p>
+                    <div className="space-y-1.5">
+                        {item.topContributors.map((c, idx) => (
+                            <Link href={`/siswa/detail?id=${c.id}`} key={idx} className="flex justify-between items-center bg-white p-2 rounded-lg shadow-sm hover:shadow border border-slate-100">
+                                <span className={`text-xs font-semibold ${studentGenders[c.id] === 'Wanita' ? 'text-pink-600' : studentGenders[c.id] === 'Pria' ? 'text-blue-600' : 'text-slate-700'}`}>{c.name}</span>
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${type === 'pelanggaran' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>{type === 'prestasi' ? '+' : ''}{c.points}</span>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+      );
+  };
+
+  const renderAbsenceItem = (item, i, typeTitle) => {
+      let icon = '📉';
+      let bg = 'bg-red-50 text-red-600';
+      if (typeTitle === 'Izin') { icon = '📨'; bg = 'bg-blue-50 text-blue-600'; }
+      else if (typeTitle === 'Bolos') { icon = '🏃'; bg = 'bg-orange-50 text-orange-600'; }
+
+      return (
+        <Link href={`/siswa/detail?id=${item.id}`} key={i} className="flex items-center justify-between p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors block">
+            <div className="flex items-center gap-3">
+            <div className={`h-7 w-7 rounded font-bold flex items-center justify-center text-xs ${bg}`}>
+                #{i+1}
+            </div>
+            <div>
+                <p className="font-bold text-slate-800 text-sm leading-tight flex items-center gap-1">
+                    {item.name}
+                    {studentIndicators[item.id] && <span className="text-red-500 text-[10px] tracking-tighter" title="Terindikasi Peringatan SP">{studentIndicators[item.id]}</span>}
+                </p>
+                <p className="text-[10px] text-slate-500">{item.class}</p>
+            </div>
+            </div>
+            <div className={`font-black text-sm px-2 py-1 rounded-md ${bg}`}>
+            {item.count}x
+            </div>
+        </Link>
+      );
+  };
+
   return (
-    <main className="flex-1 overflow-y-auto bg-slate-50 pb-20">
-      {/* Header Profile / School Info */}
+    <main className="flex-1 overflow-y-auto bg-slate-50 pb-24">
+      {/* Header */}
       <div className="bg-gradient-to-br from-primary-600 to-primary-800 backdrop-blur-md bg-opacity-90 text-white rounded-b-3xl px-6 pt-10 pb-8 shadow-lg relative overflow-hidden">
-        {/* Decorative circles for premium feel */}
         <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
         <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-white/10 blur-xl"></div>
         <div className="flex items-center justify-between relative z-10">
@@ -189,10 +337,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Top 5 Lists & SP Warnings */}
       <div className="px-6 mt-8 pb-6 flex flex-col gap-6">
-
-        {/* Peringatan SP Section */}
+        {/* Peringatan SP */}
         {!loading && spStudents.length > 0 && (
             <div className="mb-2">
                 <h2 className="text-lg font-bold text-red-600 mb-3 flex items-center gap-2">
@@ -228,6 +374,7 @@ export default function Home() {
             </div>
         )}
         
+        {/* Leaderboards Header */}
         <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold text-slate-800">Papan Peringkat</h2>
             <select 
@@ -244,131 +391,90 @@ export default function Home() {
 
         {loading ? (
            <div className="animate-pulse space-y-4">
-             <div className="h-24 bg-slate-200 rounded-xl"></div>
-             <div className="h-24 bg-slate-200 rounded-xl"></div>
+             <div className="h-32 bg-slate-200 rounded-xl"></div>
+             <div className="h-32 bg-slate-200 rounded-xl"></div>
            </div> 
         ) : (
-            <>
-                {/* 1. Top 5 Siswa Pelanggaran */}
+            <div className="flex flex-col gap-6">
+                
+                {/* 1. Top Siswa Bermasalah */}
                 <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                    <span className="bg-violation-100 text-violation-600 p-1 rounded">⚠️</span> Top 5 Pelanggaran
-                </h3>
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                    {topPelanggaran.length === 0 && <p className="text-xs text-center text-slate-400 p-4">Tidak ada data</p>}
-                    {topPelanggaran.map((item, i) => {
-                        const minPoints = topPelanggaran[0]?.points || -1; // points are negative
-                        const percentage = Math.min(100, Math.max(0, (item.points / minPoints) * 100));
-                        
-                        const hpMerah = Math.abs(item.points || item.poinPelanggaran || 0);
-                        let cardBg = 'hover:bg-slate-50';
-                        if (hpMerah >= 150) cardBg = 'bg-red-50 hover:bg-red-100 border-red-200';
-                        else if (hpMerah >= 50) cardBg = 'bg-orange-50 hover:bg-orange-100 border-orange-200';
-                        
-                        let nameColor = 'text-slate-800';
-                        if (studentGenders[item.id] === 'Wanita') nameColor = 'text-pink-600';
-                        else if (studentGenders[item.id] === 'Pria') nameColor = 'text-blue-600';
-
-                        return (
-                        <Link href={`/siswa/detail?id=${item.id}`} key={i} className={`relative p-3 border-b border-slate-50 last:border-0 transition-colors group overflow-hidden block ${cardBg}`}>
-                            {/* Visual Progress Bar Background */}
-                            <div className="absolute top-0 left-0 h-full bg-violation-50/30 -z-10 transition-all duration-500" style={{ width: `${percentage}%` }}></div>
-                            
-                            <div className="flex items-center justify-between relative z-10">
-                                <div className="flex items-center gap-3">
-                                <div className="h-7 w-7 bg-violation-50 rounded text-violation-600 font-bold flex items-center justify-center text-xs group-hover:scale-110 transition-transform shadow-sm">
-                                    #{i+1}
-                                </div>
-                                <div>
-                                    <p className={`font-bold text-sm leading-tight flex items-center gap-1 ${nameColor}`}>
-                                      {item.name}
-                                      {studentIndicators[item.id] && <span className="text-red-500 text-[10px] tracking-tighter" title="Terindikasi Peringatan SP">{studentIndicators[item.id]}</span>}
-                                    </p>
-                                    <p className="text-[10px] text-slate-500">{item.class || item.classId}</p>
-                                </div>
-                                </div>
-                                <div className="text-violation-600 font-black text-sm bg-violation-50 px-2 py-1 rounded-md">
-                                {item.points}
-                                </div>
-                            </div>
-                        </Link>
-                        );
-                    })}
-                </div>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                        <span className="bg-violation-100 text-violation-600 p-1 rounded">⚠️</span> 1. Top Siswa Bermasalah
+                    </h3>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        {topSiswaBermasalah.length === 0 && <p className="text-xs text-center text-slate-400 p-4">Tidak ada data</p>}
+                        {topSiswaBermasalah.map((item, i) => renderStudentItem(item, i, 'pelanggaran'))}
+                    </div>
                 </div>
 
-                {/* 2. Top 5 Siswa Prestasi */}
+                {/* 2. Top Kelas Bermasalah */}
                 <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                    <span className="bg-reward-100 text-reward-600 p-1 rounded">🌟</span> Top 5 Penghargaan
-                </h3>
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                    {topPrestasi.length === 0 && <p className="text-xs text-center text-slate-400 p-4">Tidak ada data</p>}
-                    {topPrestasi.map((item, i) => {
-                        const maxPoints = topPrestasi[0]?.points || 1;
-                        const percentage = Math.min(100, Math.max(0, (item.points / maxPoints) * 100));
-                        
-                        let nameColor = 'text-slate-800';
-                        if (studentGenders[item.id] === 'Wanita') nameColor = 'text-pink-600';
-                        else if (studentGenders[item.id] === 'Pria') nameColor = 'text-blue-600';
-
-                        return (
-                        <Link href={`/siswa/detail?id=${item.id}`} key={i} className="relative p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors group overflow-hidden block">
-                            {/* Visual Progress Bar Background */}
-                            <div className="absolute top-0 left-0 h-full bg-reward-50/50 -z-10 transition-all duration-500" style={{ width: `${percentage}%` }}></div>
-                            
-                            <div className="flex items-center justify-between relative z-10">
-                                <div className="flex items-center gap-3">
-                                <div className="h-7 w-7 bg-reward-50 rounded text-reward-600 font-bold flex items-center justify-center text-xs group-hover:scale-110 transition-transform">
-                                    #{i+1}
-                                </div>
-                                <div>
-                                    <p className={`font-bold text-sm leading-tight flex items-center gap-1 ${nameColor}`}>
-                                      {item.name}
-                                      {studentIndicators[item.id] && <span className="text-red-500 text-[10px] tracking-tighter" title="Terindikasi Peringatan SP">{studentIndicators[item.id]}</span>}
-                                    </p>
-                                    <p className="text-[10px] text-slate-500">{item.class || item.classId}</p>
-                                </div>
-                                </div>
-                                <div className="text-reward-600 font-black text-sm bg-reward-50 px-2 py-1 rounded-md">
-                                +{item.points}
-                                </div>
-                            </div>
-                        </Link>
-                        );
-                    })}
-                </div>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                        <span className="bg-orange-100 text-orange-600 p-1 rounded">🏫</span> 2. Top Kelas Bermasalah
+                    </h3>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        {topKelasBermasalah.length === 0 && <p className="text-xs text-center text-slate-400 p-4">Tidak ada data</p>}
+                        {topKelasBermasalah.map((item, i) => renderClassItem(item, i, 'pelanggaran'))}
+                    </div>
                 </div>
 
-                {/* 3. Top 5 Siswa Alpa Upacara */}
+                {/* 3. Top Siswa Panutan */}
                 <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                    <span className="bg-red-100 text-red-600 p-1 rounded">📉</span> Top 5 Absen Upacara
-                </h3>
-                <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                    {topAbsences.length === 0 && <p className="text-xs text-center text-slate-400 p-4">Tidak ada data</p>}
-                    {topAbsences.map((item, i) => (
-                    <Link href={`/siswa/detail?id=${item.id}`} key={i} className="flex items-center justify-between p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors block">
-                        <div className="flex items-center gap-3">
-                        <div className="h-7 w-7 bg-red-50 rounded text-red-600 font-bold flex items-center justify-center text-xs">
-                            #{i+1}
-                        </div>
-                        <div>
-                            <p className="font-bold text-slate-800 text-sm leading-tight flex items-center gap-1">
-                              {item.name}
-                              {studentIndicators[item.id] && <span className="text-red-500 text-[10px] tracking-tighter" title="Terindikasi Peringatan SP">{studentIndicators[item.id]}</span>}
-                            </p>
-                            <p className="text-[10px] text-slate-500">{item.class}</p>
-                        </div>
-                        </div>
-                        <div className="text-red-600 font-black text-sm bg-red-50 px-2 py-1 rounded-md">
-                        {item.count}x
-                        </div>
-                    </Link>
-                    ))}
+                    <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                        <span className="bg-reward-100 text-reward-600 p-1 rounded">🌟</span> 3. Top Siswa Panutan
+                    </h3>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        {topSiswaPanutan.length === 0 && <p className="text-xs text-center text-slate-400 p-4">Tidak ada data</p>}
+                        {topSiswaPanutan.map((item, i) => renderStudentItem(item, i, 'prestasi'))}
+                    </div>
                 </div>
+
+                {/* 4. Top Kelas Panutan */}
+                <div>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                        <span className="bg-green-100 text-green-600 p-1 rounded">🏫</span> 4. Top Kelas Panutan
+                    </h3>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        {topKelasPanutan.length === 0 && <p className="text-xs text-center text-slate-400 p-4">Tidak ada data</p>}
+                        {topKelasPanutan.map((item, i) => renderClassItem(item, i, 'prestasi'))}
+                    </div>
                 </div>
-            </>
+
+                {/* 5. Top Siswa Alpa */}
+                <div>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                        <span className="bg-red-100 text-red-600 p-1 rounded">📉</span> 5. Top Siswa Alpa Upacara
+                    </h3>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        {topSiswaAlpa.length === 0 && <p className="text-xs text-center text-slate-400 p-4">Tidak ada data</p>}
+                        {topSiswaAlpa.map((item, i) => renderAbsenceItem(item, i, 'Alpa'))}
+                    </div>
+                </div>
+
+                {/* 6. Top Siswa Bolos */}
+                <div>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                        <span className="bg-orange-100 text-orange-600 p-1 rounded">🏃</span> 6. Top Siswa Bolos Upacara
+                    </h3>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        {topSiswaBolos.length === 0 && <p className="text-xs text-center text-slate-400 p-4">Tidak ada data</p>}
+                        {topSiswaBolos.map((item, i) => renderAbsenceItem(item, i, 'Bolos'))}
+                    </div>
+                </div>
+
+                {/* 7. Top Siswa Izin */}
+                <div>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                        <span className="bg-blue-100 text-blue-600 p-1 rounded">📨</span> 7. Top Siswa Izin Upacara
+                    </h3>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        {topSiswaIzin.length === 0 && <p className="text-xs text-center text-slate-400 p-4">Tidak ada data</p>}
+                        {topSiswaIzin.map((item, i) => renderAbsenceItem(item, i, 'Izin'))}
+                    </div>
+                </div>
+
+            </div>
         )}
       </div>
       
