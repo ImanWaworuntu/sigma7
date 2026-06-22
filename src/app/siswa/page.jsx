@@ -11,10 +11,23 @@ export default function SiswaPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('Semua'); // Semua, Bermasalah, Berprestasi, Kelas XII
+  const [displayLimit, setDisplayLimit] = useState(20);
+  const [sortBy, setSortBy] = useState('name-asc');
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    setDisplayLimit(20);
+  }, [searchTerm, filter, sortBy]);
+
+  const handleScroll = (e) => {
+    const bottom = e.target.scrollHeight - e.target.scrollTop - e.target.clientHeight < 100;
+    if (bottom) {
+      setDisplayLimit(prev => prev + 20);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -50,7 +63,15 @@ export default function SiswaPage() {
     else matchFilter = s.classId === filter;
 
     return matchSearch && matchFilter;
+  }).sort((a, b) => {
+    if (sortBy === 'name-asc') return (a.name || '').localeCompare(b.name || '');
+    if (sortBy === 'name-desc') return (b.name || '').localeCompare(a.name || '');
+    if (sortBy === 'violation-desc') return Math.abs(b.poinPelanggaran || 0) - Math.abs(a.poinPelanggaran || 0);
+    if (sortBy === 'reward-desc') return (b.poinPenghargaan || 0) - (a.poinPenghargaan || 0);
+    return 0;
   });
+
+  const visibleStudents = filteredStudents.slice(0, displayLimit);
 
   return (
     <main className="flex-1 bg-slate-50 pb-20 flex flex-col h-screen overflow-hidden">
@@ -72,17 +93,34 @@ export default function SiswaPage() {
           </div>
         </div>
         
-        {/* Search */}
-        <div className="relative">
-          <input 
-            type="text" 
-            placeholder="Cari nama atau kelas..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-100 border-none rounded-xl py-3 px-4 pl-10 outline-none focus:ring-2 focus:ring-primary-500 transition-shadow text-sm"
-          />
-          <div className="absolute left-3 top-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        {/* Search & Sort */}
+        <div className="flex gap-2 relative">
+          <div className="relative flex-1">
+            <input 
+              type="text" 
+              placeholder="Cari nama atau kelas..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-slate-100 border-none rounded-xl py-3 px-4 pl-10 outline-none focus:ring-2 focus:ring-primary-500 transition-shadow text-sm"
+            />
+            <div className="absolute left-3 top-3">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+          </div>
+          <div className="relative w-28 shrink-0">
+            <select 
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full h-full bg-slate-100 border-none rounded-xl pl-3 pr-8 outline-none focus:ring-2 focus:ring-primary-500 text-xs text-slate-600 font-semibold appearance-none"
+            >
+              <option value="name-asc">A - Z</option>
+              <option value="name-desc">Z - A</option>
+              <option value="violation-desc">Pelanggaran</option>
+              <option value="reward-desc">Penghargaan</option>
+            </select>
+            <div className="absolute right-2 top-0 bottom-0 flex items-center pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </div>
           </div>
         </div>
         
@@ -100,16 +138,16 @@ export default function SiswaPage() {
         </div>
       </div>
 
-      <div className="p-4 flex-1 overflow-y-auto">
+      <div className="p-4 flex-1 overflow-y-auto" onScroll={handleScroll}>
         {loading ? (
           <div className="space-y-3">
             {[1,2,3,4].map(i => <div key={i} className="h-20 bg-slate-200 animate-pulse rounded-xl"></div>)}
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {filteredStudents.length === 0 && <div className="text-center text-slate-500 mt-10">Tidak ada data.</div>}
+            {visibleStudents.length === 0 && <div className="text-center text-slate-500 mt-10">Tidak ada data.</div>}
             
-            {filteredStudents.map(student => {
+            {visibleStudents.map(student => {
               const pPelanggaran = student.poinPelanggaran || 0;
               const pPenghargaan = student.poinPenghargaan || 0;
               
@@ -159,6 +197,11 @@ export default function SiswaPage() {
                 </Link>
               );
             })}
+            {visibleStudents.length > 0 && displayLimit < filteredStudents.length && (
+              <div className="py-4 flex justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+              </div>
+            )}
           </div>
         )}
       </div>
