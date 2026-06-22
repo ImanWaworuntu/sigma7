@@ -407,7 +407,7 @@ function InputForm() {
                   <div className="flex flex-col items-center justify-center">
                     <p className="text-xs font-bold text-slate-500">Ambil Foto Bukti <span className="font-normal">(Opsional)</span></p>
                   </div>
-                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
                 </label>
               )}
             </div>

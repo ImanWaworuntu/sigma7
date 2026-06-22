@@ -241,7 +241,7 @@ function UpacaraContent() {
                 {photos.length < 36 && (
                     <label className="h-16 w-16 flex flex-col items-center justify-center bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        <input type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                        <input type="file" multiple accept="image/*" capture="environment" className="hidden" onChange={handlePhotoUpload} />
                     </label>
                 )}
             </div>
