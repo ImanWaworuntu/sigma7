@@ -335,11 +335,17 @@ function SiswaProfileContent() {
         </div>
 
         {/* Print Footer */}
-        <div className="hidden print:block mt-16 flex justify-end">
-          <div className="text-center w-48">
-            <p className="mb-16">Makassar, {new Date().toLocaleDateString('id-ID')}</p>
+        <div className="hidden print:flex mt-16 justify-between px-8">
+          <div className="text-center w-56">
+            <p className="mb-16 opacity-0">Tanggal</p>
             <p className="font-bold border-b border-black pb-1">Guru Bimbingan Konseling</p>
             <p className="text-sm mt-1">NIP. .............................</p>
+          </div>
+          <div className="text-center w-56">
+            <p className="mb-16">Makassar, {new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p className="font-bold border-b border-black pb-1">Wali Kelas</p>
+            <p className="font-bold mt-1 text-sm uppercase">{student.homeroomTeacher || '.............................'}</p>
+            <p className="text-sm">NIP. .............................</p>
           </div>
         </div>
       </div>

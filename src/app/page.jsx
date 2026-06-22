@@ -22,8 +22,8 @@ export default function LoginPage() {
     <div className="flex-1 bg-slate-50 min-h-screen flex flex-col justify-center px-6">
       <div className="bg-white p-8 rounded-3xl shadow-lg border border-slate-100">
         <div className="text-center mb-8">
-          <div className="h-20 w-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md p-2">
-            <img src="/logo.jpg" alt="Logo SMAN 7" className="h-full w-full object-contain" />
+          <div className="h-28 w-28 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md p-1 border border-slate-100">
+            <img src="/logo-login.jpg" alt="Logo SMAN 7" className="h-full w-full object-contain rounded-xl" />
           </div>
           <h1 className="text-2xl font-bold text-slate-800">SIGMA 7</h1>
           <p className="text-sm text-slate-500 mt-1">Sistem Siswa Integrasi & Garda Moral</p>
