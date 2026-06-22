@@ -11,8 +11,8 @@ export function AuthProvider({ children }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Check localStorage for saved session
-    const storedUser = localStorage.getItem('sigma_user');
+    // Check sessionStorage for saved session
+    const storedUser = sessionStorage.getItem('sigma_user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
     if (role) {
       const userData = { username, role };
       setUser(userData);
-      localStorage.setItem('sigma_user', JSON.stringify(userData));
+      sessionStorage.setItem('sigma_user', JSON.stringify(userData));
       if (role === 'osis') {
         router.push('/upacara');
       } else {
@@ -54,7 +54,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('sigma_user');
+    sessionStorage.removeItem('sigma_user');
     router.push('/');
   };
 
