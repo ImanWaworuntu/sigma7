@@ -128,33 +128,42 @@ function SiswaProfileContent() {
   return (
     <main className="flex-1 overflow-y-auto bg-slate-50 pb-20 relative min-h-screen flex flex-col">
       <Toaster />
-      {/* Header Info */}
-      <div className="bg-primary-600 text-white rounded-b-3xl px-6 pt-10 pb-24 shadow-sm relative">
-        <div className="flex items-center justify-between mb-2">
-            <Link href="/siswa" className="active:scale-95 transition-transform p-2 -ml-2 rounded-full hover:bg-white/10">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+      <div className="bg-gradient-to-br from-primary-600 to-primary-800 text-white rounded-b-3xl px-6 pt-10 pb-20 shadow-lg relative overflow-hidden">
+        {/* Decorative glass circles */}
+        <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
+        <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-white/10 blur-xl"></div>
+        
+        <div className="relative z-10 flex items-center justify-between mb-4">
+            <Link href="/siswa" className="active:scale-95 transition-transform p-2 -ml-2 rounded-full hover:bg-white/10 flex items-center gap-1 text-sm font-semibold text-white/90">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              Kembali
             </Link>
             {user?.role === 'admin' && (
-              <button onClick={openEditModal} className="text-white text-xs font-bold bg-white/20 px-3 py-1.5 rounded-full hover:bg-white/30 active:scale-95 transition-all flex items-center gap-1 shadow-sm">
+              <button onClick={openEditModal} className="text-white text-xs font-bold bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full hover:bg-white/20 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                Edit Biodata
+                Edit
               </button>
             )}
         </div>
-        <h1 className="text-xl font-bold">Profil Siswa</h1>
+        <div className="relative z-10 text-center mt-2">
+            <h1 className="text-2xl font-black tracking-tight drop-shadow-sm">PROFIL SISWA</h1>
+            <p className="text-primary-100 text-xs font-medium mt-1 opacity-80 uppercase tracking-widest">SMAN 7 Makassar</p>
+        </div>
       </div>
 
-      <div className="px-6 -mt-16 relative z-10">
-        <div className="flex justify-end gap-2 mb-4">
-          <Link href={`/input?studentId=${studentId}&step=2`} className="bg-primary-600 text-white px-4 py-2 rounded-full shadow-sm hover:bg-primary-700 active:scale-95 transition-all text-xs font-bold flex items-center print:hidden">
-            + Input Poin
+      {/* Floating Action Buttons */}
+      <div className="px-6 -mt-6 relative z-20 flex justify-center w-full">
+        <div className="flex gap-3 mb-4 items-center justify-center bg-white/80 backdrop-blur-xl p-2 rounded-full shadow-lg border border-slate-100/50 print:hidden w-max">
+          <Link href={`/input?studentId=${studentId}&step=2`} className="bg-primary-600 text-white px-5 py-2.5 rounded-full shadow-md shadow-primary-600/30 hover:bg-primary-700 active:scale-95 transition-all text-xs font-bold flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            Input Poin
           </Link>
-          <button onClick={() => window.print()} className="bg-slate-800 text-white p-2 rounded-full shadow-sm hover:bg-slate-900 active:scale-95 transition-all print:hidden" title="Cetak Rekam Jejak">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
+          <button onClick={() => window.print()} className="bg-slate-100 text-slate-700 px-4 py-2.5 rounded-full hover:bg-slate-200 active:scale-95 transition-all text-xs font-bold flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+            Print
           </button>
         </div>
+      </div>
 
         {/* Laporan Cetak Header (Hanya muncul saat print) */}
         <div className="hidden print:block text-center mb-8 border-b-2 border-slate-800 pb-4">
