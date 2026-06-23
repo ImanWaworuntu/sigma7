@@ -52,4 +52,4 @@ Sistem ini dikonfigurasi untuk menggunakan mekanisme **Static Export** Next.js (
    ```
 
 ---
-*Dikembangkan oleh Iman Waworuntu & Tim.*
+**© Pandu Digital SMANET 2026**
