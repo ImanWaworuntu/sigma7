@@ -22,15 +22,8 @@ export default function SiswaPage() {
     setDisplayLimit(20);
   }, [searchTerm, filter, sortBy]);
 
-  const handleScroll = (e) => {
-    const bottom = e.currentTarget.scrollHeight - e.currentTarget.scrollTop - e.currentTarget.clientHeight < 100;
-    if (bottom) {
-      setDisplayLimit(prev => {
-        // Prevent infinite state updates if we've already loaded all filtered students
-        if (prev < filteredStudents.length) return prev + 20;
-        return prev;
-      });
-    }
+  const handleLoadMore = () => {
+    setDisplayLimit(prev => prev + 20);
   };
 
   const fetchData = async () => {
@@ -142,7 +135,7 @@ export default function SiswaPage() {
         </div>
       </div>
 
-      <div className="p-4 flex-1 overflow-y-auto" onScroll={handleScroll}>
+      <div className="p-4 flex-1 overflow-y-auto">
         {loading ? (
           <div className="space-y-3">
             {[1,2,3,4].map(i => <div key={i} className="h-20 bg-slate-200 animate-pulse rounded-xl"></div>)}
@@ -203,7 +196,12 @@ export default function SiswaPage() {
             })}
             {visibleStudents.length > 0 && displayLimit < filteredStudents.length && (
               <div className="py-4 flex justify-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+                <button 
+                  onClick={handleLoadMore}
+                  className="bg-white border border-slate-200 text-slate-600 px-6 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-slate-50 active:scale-95 transition-all"
+                >
+                  Tampilkan Lebih Banyak
+                </button>
               </div>
             )}
           </div>
