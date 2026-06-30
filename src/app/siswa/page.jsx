@@ -23,11 +23,11 @@ export default function SiswaPage() {
   }, [searchTerm, filter, sortBy]);
 
   const handleScroll = (e) => {
-    const bottom = e.target.scrollHeight - e.target.scrollTop - e.target.clientHeight < 100;
+    const bottom = e.currentTarget.scrollHeight - e.currentTarget.scrollTop - e.currentTarget.clientHeight < 100;
     if (bottom) {
       setDisplayLimit(prev => {
-        // Prevent infinite state updates if we've already loaded all students
-        if (prev < students.length) return prev + 20;
+        // Prevent infinite state updates if we've already loaded all filtered students
+        if (prev < filteredStudents.length) return prev + 20;
         return prev;
       });
     }
