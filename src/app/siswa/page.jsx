@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { getStudents, getClasses } from '@/lib/dataService';
 
 export default function SiswaPage() {
@@ -22,9 +22,16 @@ export default function SiswaPage() {
     setDisplayLimit(20);
   }, [searchTerm, filter, sortBy]);
 
-  const handleLoadMore = () => {
-    setDisplayLimit(prev => prev + 20);
-  };
+  const observerRef = useRef(null);
+  const loadingRef = useCallback(node => {
+    if (observerRef.current) observerRef.current.disconnect();
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setDisplayLimit(prev => prev + 20);
+      }
+    });
+    if (node) observerRef.current.observe(node);
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -195,13 +202,8 @@ export default function SiswaPage() {
               );
             })}
             {visibleStudents.length > 0 && displayLimit < filteredStudents.length && (
-              <div className="py-4 flex justify-center">
-                <button 
-                  onClick={handleLoadMore}
-                  className="bg-white border border-slate-200 text-slate-600 px-6 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-slate-50 active:scale-95 transition-all"
-                >
-                  Tampilkan Lebih Banyak
-                </button>
+              <div ref={loadingRef} className="py-4 flex justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
               </div>
             )}
           </div>
