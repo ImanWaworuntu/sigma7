@@ -1,8 +1,7 @@
 "use client"
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 
 function BuktiContent() {
   const searchParams = useSearchParams();
@@ -13,9 +12,9 @@ function BuktiContent() {
 
   useEffect(() => {
     if (id) {
-      getDoc(doc(db, 'record_photos', id)).then(snap => {
-        if (snap.exists()) {
-          setPhoto(snap.data().photoBase64);
+      supabase.from('records').select('photo_url').eq('id', id).single().then(({ data, error }) => {
+        if (data && data.photo_url) {
+          setPhoto(data.photo_url);
         }
         setLoading(false);
       }).catch(err => {

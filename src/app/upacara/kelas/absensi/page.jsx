@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getStudents, saveAttendance } from '@/lib/dataService';
 import imageCompression from 'browser-image-compression';
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { app } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { toast, Toaster } from 'react-hot-toast';
 
 import { useSearchParams } from 'next/navigation';
@@ -94,18 +93,22 @@ function UpacaraContent() {
     try {
       // 1. Upload photos with auto-compression
       const photoUrls = [];
-      const storage = getStorage(app);
       
       for (const p of photos) {
         // Compress
-        const options = { maxSizeMB: 0.15, maxWidthOrHeight: 1024, useWebWorker: true };
+        const options = { maxSizeMB: 0.05, maxWidthOrHeight: 1024, useWebWorker: true };
         const compressedFile = await imageCompression(p.file, options);
         
-        // Upload to Firebase Storage
-        const fileRef = ref(storage, `upacara/${Date.now()}_${compressedFile.name}`);
-        await uploadBytes(fileRef, compressedFile);
-        const url = await getDownloadURL(fileRef);
-        photoUrls.push(url);
+        // Upload to Supabase Storage
+        const fileName = `upacara/${Date.now()}_${compressedFile.name}`;
+        const { data, error: uploadError } = await supabase.storage
+            .from('record_photos')
+            .upload(fileName, compressedFile, { contentType: compressedFile.type });
+
+        if (!uploadError) {
+            const { data: publicUrlData } = supabase.storage.from('record_photos').getPublicUrl(fileName);
+            photoUrls.push(publicUrlData.publicUrl);
+        }
       }
 
       // 2. Save Attendance Records

@@ -302,7 +302,7 @@ export default function RekapitulasiLanjutan() {
             </h2>
             <div className="h-64 w-full">
               {trendData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={trendData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="date" tick={{fontSize: 10}} tickMargin={10} stroke="#cbd5e1" />
@@ -327,7 +327,7 @@ export default function RekapitulasiLanjutan() {
             </h2>
             <div className="h-64 w-full">
               {classPieData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
                       data={classPieData}

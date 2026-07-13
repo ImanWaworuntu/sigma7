@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import { getStudentById, getRecords, issueSp, updateStudent, getClasses } from '@/lib/dataService';
+import { getStudentById, getRecords, issueSp, updateStudent, getClasses, deleteRecord, updateRecord } from '@/lib/dataService';
+import imageCompression from 'browser-image-compression';
 import { toast, Toaster } from 'react-hot-toast';
 
 function SiswaProfileContent() {
@@ -24,11 +25,25 @@ function SiswaProfileContent() {
   });
   const [submitting, setSubmitting] = useState(false);
 
+  // Record Edit & View State
+  const [photoViewUrl, setPhotoViewUrl] = useState(null);
+  const [recordActionLoading, setRecordActionLoading] = useState(false);
+
   useEffect(() => {
     if (studentId) {
       fetchData();
     }
   }, [studentId]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && photoViewUrl) {
+        setPhotoViewUrl(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [photoViewUrl]);
 
   useEffect(() => {
     if (user?.role === 'admin' && showEditModal && classes.length === 0) {
@@ -49,6 +64,42 @@ function SiswaProfileContent() {
       console.error(error);
     }
     setLoading(false);
+  };
+
+  const handleDeleteRecord = async (recordId) => {
+    if (!confirm("Hapus catatan pelanggaran/prestasi ini beserta fotonya secara permanen?")) return;
+    setRecordActionLoading(true);
+    try {
+      await deleteRecord(recordId);
+      toast.success("Catatan berhasil dihapus");
+      fetchData();
+    } catch (e) {
+      toast.error("Gagal menghapus catatan");
+    }
+    setRecordActionLoading(false);
+  };
+
+  const compressImageToDataURL = async (file) => {
+    const options = { maxSizeMB: 0.05, maxWidthOrHeight: 1024, useWebWorker: true };
+    const compressed = await imageCompression(file, options);
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(compressed);
+    });
+  };
+
+  const handleUpdateRecordPhoto = async (recordId, file) => {
+    setRecordActionLoading(true);
+    try {
+      const base64 = await compressImageToDataURL(file);
+      await updateRecord(recordId, { photoBase64: base64 });
+      toast.success("Foto berhasil diperbarui");
+      fetchData();
+    } catch (e) {
+      toast.error("Gagal memperbarui foto");
+    }
+    setRecordActionLoading(false);
   };
 
   if (loading) {
@@ -312,14 +363,32 @@ function SiswaProfileContent() {
                     <div className="flex items-center gap-2">
                       <p className="text-xs font-semibold text-slate-500">{record.date}</p>
                       <span className="text-[10px] text-slate-400 border-l border-slate-300 pl-2 ml-1 flex-shrink-0">Oleh: {record.reportedBy || 'Sistem'}</span>
-                      {(record.hasPhoto || record.photoUrl) && (
-                        <Link 
-                          href={record.photoUrl || `/bukti?id=${record.id}`} 
-                          className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-1 print:hidden"
+                      {(record.hasPhoto || record.photoUrl) ? (
+                        <button 
+                          onClick={() => setPhotoViewUrl(record.photoUrl || `/bukti?id=${record.id}`)} 
+                          className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-1 print:hidden cursor-pointer"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                           Lihat Bukti
-                        </Link>
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 border-l border-slate-300 pl-2 ml-1 print:hidden">Tidak ada foto</span>
+                      )}
+                      
+                      {user?.role === 'admin' && (
+                        <div className="flex items-center gap-1 ml-auto print:hidden">
+                           <label className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded hover:bg-slate-200 cursor-pointer transition-colors border border-slate-200">
+                              Edit Foto
+                              <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  handleUpdateRecordPhoto(record.id, e.target.files[0]);
+                                }
+                              }} />
+                           </label>
+                           <button onClick={() => handleDeleteRecord(record.id)} disabled={recordActionLoading} className="text-[10px] font-bold bg-red-50 text-red-600 px-2 py-0.5 rounded hover:bg-red-100 transition-colors border border-red-200">
+                             Hapus
+                           </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -420,6 +489,16 @@ function SiswaProfileContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* PHOTO PREVIEW MODAL */}
+      {photoViewUrl && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={() => setPhotoViewUrl(null)}>
+          <div className="relative max-w-2xl w-full max-h-[90vh] flex flex-col items-center">
+            <button onClick={() => setPhotoViewUrl(null)} className="absolute -top-10 right-0 text-white hover:text-slate-300 font-bold text-sm bg-white/20 px-3 py-1 rounded-full backdrop-blur-md">Tutup (X)</button>
+            <img src={photoViewUrl} alt="Bukti Foto" className="rounded-xl shadow-2xl object-contain max-h-[85vh] w-auto border-2 border-white/10" onClick={(e) => e.stopPropagation()} />
           </div>
         </div>
       )}

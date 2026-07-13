@@ -9,11 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.110.2",
     "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "dotenv": "^17.4.2",
-    "firebase": "^10.12.1",
     "framer-motion": "^11.2.6",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",

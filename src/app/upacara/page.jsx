@@ -1,8 +1,7 @@
 "use client"
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { collection, query, getDocs, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { getClasses, getStudents } from '@/lib/dataService';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -27,12 +26,19 @@ export default function Upacara() {
 
       // Dummy calculation for top absences since we need to aggregate
       // Ideally we fetch from attendance collection and group by student
-      const q = query(collection(db, 'attendance'), orderBy('createdAt', 'desc'));
-      const snap = await getDocs(q);
+      const { data: snap } = await supabase
+        .from('attendance')
+        .select('*, students(name, class_id, classes(name))')
+        .order('created_at', { ascending: false });
       
       const absMap = {};
-      snap.docs.forEach(doc => {
-        const data = doc.data();
+      (snap || []).forEach(doc => {
+        const data = {
+            studentId: doc.student_id,
+            studentName: doc.students?.name,
+            className: doc.students?.classes?.name || doc.students?.class_id,
+            status: doc.status
+        };
         const currentClass = classMap[data.studentId] || data.className;
         if (data.status !== 'Hadir') {
             if(!absMap[data.studentId]) absMap[data.studentId] = { name: data.studentName, class: currentClass, count: 0 };

@@ -2,8 +2,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { startOfDay, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { getStudents } from '@/lib/dataService';
 
@@ -58,19 +57,25 @@ export default function Home() {
       setStudentIndicators(indicatorMap);
       setStudentGenders(genderMap);
 
-      const qRecords = query(
-        collection(db, 'records'),
-        where('createdAt', '>=', isoStartDate)
-      );
-      const snapRecords = await getDocs(qRecords);
+      const { data: snapRecords, error: err1 } = await supabase
+        .from('records')
+        .select('*, students(name, class_id, classes(name))')
+        .gte('created_at', isoStartDate);
+      if (err1) console.error("Error fetching records:", err1);
       
       const studentMapPelanggaran = {};
       const studentMapPrestasi = {};
       const classMapPelanggaran = {};
       const classMapPrestasi = {};
 
-      snapRecords.docs.forEach(doc => {
-          const data = doc.data();
+      (snapRecords || []).forEach(doc => {
+          const data = {
+            studentId: doc.student_id,
+            studentName: doc.students?.name,
+            className: doc.students?.classes?.name || doc.students?.class_id,
+            points: doc.points
+          };
+          
           if (!classMap.hasOwnProperty(data.studentId)) return;
           const currentClass = classMap[data.studentId] || data.className || '';
           if (currentClass.toUpperCase().startsWith('ALUMNI')) return;
@@ -119,17 +124,22 @@ export default function Home() {
           topContributors: Object.values(c.contributors).sort((a, b) => b.points - a.points).slice(0, 5)
       })));
 
-      const qAbsence = query(
-        collection(db, 'attendance'),
-        where('createdAt', '>=', isoStartDate)
-      );
-      const snapAbsence = await getDocs(qAbsence);
+      const { data: snapAbsence, error: err2 } = await supabase
+        .from('attendance')
+        .select('*, students(name, class_id, classes(name))')
+        .gte('created_at', isoStartDate);
+      if (err2) console.error("Error fetching attendance:", err2);
       const absMapAlpa = {};
       const absMapBolos = {};
       const absMapIzin = {};
 
-      snapAbsence.docs.forEach(doc => {
-          const data = doc.data();
+      (snapAbsence || []).forEach(doc => {
+          const data = {
+            studentId: doc.student_id,
+            studentName: doc.students?.name,
+            className: doc.students?.classes?.name || doc.students?.class_id,
+            status: doc.status
+          };
           if (!classMap.hasOwnProperty(data.studentId)) return;
           const currentClass = classMap[data.studentId] || data.className || '';
           if (currentClass.toUpperCase().startsWith('ALUMNI')) return;
@@ -149,13 +159,19 @@ export default function Home() {
       setTopSiswaBolos(Object.values(absMapBolos).sort((a,b) => b.count - a.count).slice(0, 5));
       setTopSiswaIzin(Object.values(absMapIzin).sort((a,b) => b.count - a.count).slice(0, 5));
 
-      const qSP = query(
-        collection(db, 'students'),
-        where('poinPelanggaran', '<=', -50),
-        orderBy('poinPelanggaran', 'asc')
-      );
-      const snapSP = await getDocs(qSP);
-      const arrSP = snapSP.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(student => {
+      const { data: snapSP, error: err3 } = await supabase
+        .from('students')
+        .select('*')
+        .lte('poin_pelanggaran', -50)
+        .order('poin_pelanggaran', { ascending: true });
+      if (err3) console.error("Error fetching SP students:", err3);
+
+      const arrSP = (snapSP || []).map(doc => ({
+          ...doc,
+          classId: doc.class_id,
+          poinPelanggaran: doc.poin_pelanggaran,
+          spIssuedLevel: doc.sp_issued_level
+      })).filter(student => {
           if ((student.classId || '').toUpperCase().startsWith('ALUMNI')) return false;
           const hpMerah = Math.abs(student.poinPelanggaran || 0);
           const issued = student.spIssuedLevel || 0;

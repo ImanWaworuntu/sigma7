@@ -179,7 +179,7 @@ export default function TambahSiswa() {
 
         <div className="mt-8 bg-blue-50 p-6 rounded-2xl border border-blue-100">
             <h2 className="font-bold text-blue-800 mb-2">Import Data Massal?</h2>
-            <p className="text-xs text-blue-600 mb-4">Untuk memasukkan data siswa atau rekaman lama secara massal, disarankan untuk langsung mengunggah file CSV/Excel melalui panel Admin Firebase atau menggunakan script import khusus.</p>
+            <p className="text-xs text-blue-600 mb-4">Untuk memasukkan data siswa atau rekaman lama secara massal, disarankan untuk langsung mengunggah file CSV/Excel melalui Supabase Dashboard atau menggunakan script import khusus.</p>
             <button onClick={() => alert("Fitur Import CSV sedang dalam pengembangan")} className="bg-white text-blue-700 px-4 py-2 rounded-lg text-xs font-bold border border-blue-200 shadow-sm active:scale-95">Gunakan Alat Import</button>
         </div>
       </div>
