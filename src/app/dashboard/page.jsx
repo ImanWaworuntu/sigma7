@@ -42,43 +42,62 @@ export default function Home() {
       
       const isoStartDate = startDate.toISOString();
       
-      const allStudents = await getStudents();
+      // Fetch data in parallel to avoid sequence blocking
+      const [recordsRes, absenceRes, spRes] = await Promise.all([
+        supabase
+          .from('records')
+          .select('*, students(name, class_id, gender, poin_pelanggaran, classes(name))')
+          .gte('created_at', isoStartDate),
+        supabase
+          .from('attendance')
+          .select('*, students(name, class_id, gender, poin_pelanggaran, classes(name))')
+          .gte('created_at', isoStartDate),
+        supabase
+          .from('students')
+          .select('*, classes(name)')
+          .lte('poin_pelanggaran', -50)
+          .order('poin_pelanggaran', { ascending: true })
+      ]);
+
+      if (recordsRes.error) console.error("Error fetching records:", recordsRes.error);
+      if (absenceRes.error) console.error("Error fetching attendance:", absenceRes.error);
+      if (spRes.error) console.error("Error fetching SP students:", spRes.error);
+
+      const snapRecords = recordsRes.data || [];
+      const snapAbsence = absenceRes.data || [];
+      const snapSP = spRes.data || [];
+
       const indicatorMap = {};
       const genderMap = {};
-      const classMap = {};
-      allStudents.forEach(s => {
-          genderMap[s.id] = s.gender;
-          classMap[s.id] = s.classId;
-          const hpMerah = Math.abs(s.poinPelanggaran || 0);
-          if (hpMerah >= 200) indicatorMap[s.id] = '⚠️⚠️⚠️';
-          else if (hpMerah >= 150) indicatorMap[s.id] = '⚠️⚠️';
-          else if (hpMerah >= 50) indicatorMap[s.id] = '⚠️';
-      });
-      setStudentIndicators(indicatorMap);
-      setStudentGenders(genderMap);
 
-      const { data: snapRecords, error: err1 } = await supabase
-        .from('records')
-        .select('*, students(name, class_id, classes(name))')
-        .gte('created_at', isoStartDate);
-      if (err1) console.error("Error fetching records:", err1);
-      
+      const getIndicator = (poin_pelanggaran) => {
+        const hpMerah = Math.abs(poin_pelanggaran || 0);
+        if (hpMerah >= 200) return '⚠️⚠️⚠️';
+        if (hpMerah >= 150) return '⚠️⚠️';
+        if (hpMerah >= 50) return '⚠️';
+        return '';
+      };
+
       const studentMapPelanggaran = {};
       const studentMapPrestasi = {};
       const classMapPelanggaran = {};
       const classMapPrestasi = {};
 
-      (snapRecords || []).forEach(doc => {
+      snapRecords.forEach(doc => {
+          if (!doc.students) return; // Skip invalid records
+          const student = doc.students;
+          const currentClass = student.classes?.name || student.class_id || '';
+          if (currentClass.toUpperCase().startsWith('ALUMNI')) return;
+
+          genderMap[doc.student_id] = student.gender;
+          indicatorMap[doc.student_id] = getIndicator(student.poin_pelanggaran);
+
           const data = {
             studentId: doc.student_id,
-            studentName: doc.students?.name,
-            className: doc.students?.classes?.name || doc.students?.class_id,
+            studentName: student.name,
+            className: currentClass,
             points: doc.points
           };
-          
-          if (!classMap.hasOwnProperty(data.studentId)) return;
-          const currentClass = classMap[data.studentId] || data.className || '';
-          if (currentClass.toUpperCase().startsWith('ALUMNI')) return;
 
           if (data.points < 0) {
               if (!studentMapPelanggaran[data.studentId]) {
@@ -124,25 +143,25 @@ export default function Home() {
           topContributors: Object.values(c.contributors).sort((a, b) => b.points - a.points).slice(0, 5)
       })));
 
-      const { data: snapAbsence, error: err2 } = await supabase
-        .from('attendance')
-        .select('*, students(name, class_id, classes(name))')
-        .gte('created_at', isoStartDate);
-      if (err2) console.error("Error fetching attendance:", err2);
       const absMapAlpa = {};
       const absMapBolos = {};
       const absMapIzin = {};
 
-      (snapAbsence || []).forEach(doc => {
+      snapAbsence.forEach(doc => {
+          if (!doc.students) return;
+          const student = doc.students;
+          const currentClass = student.classes?.name || student.class_id || '';
+          if (currentClass.toUpperCase().startsWith('ALUMNI')) return;
+
+          genderMap[doc.student_id] = student.gender;
+          indicatorMap[doc.student_id] = getIndicator(student.poin_pelanggaran);
+
           const data = {
             studentId: doc.student_id,
-            studentName: doc.students?.name,
-            className: doc.students?.classes?.name || doc.students?.class_id,
+            studentName: student.name,
+            className: currentClass,
             status: doc.status
           };
-          if (!classMap.hasOwnProperty(data.studentId)) return;
-          const currentClass = classMap[data.studentId] || data.className || '';
-          if (currentClass.toUpperCase().startsWith('ALUMNI')) return;
 
           if (data.status === 'Alpa') {
               if(!absMapAlpa[data.studentId]) absMapAlpa[data.studentId] = { id: data.studentId, name: data.studentName, class: currentClass, count: 0 };
@@ -159,19 +178,17 @@ export default function Home() {
       setTopSiswaBolos(Object.values(absMapBolos).sort((a,b) => b.count - a.count).slice(0, 5));
       setTopSiswaIzin(Object.values(absMapIzin).sort((a,b) => b.count - a.count).slice(0, 5));
 
-      const { data: snapSP, error: err3 } = await supabase
-        .from('students')
-        .select('*')
-        .lte('poin_pelanggaran', -50)
-        .order('poin_pelanggaran', { ascending: true });
-      if (err3) console.error("Error fetching SP students:", err3);
+      const arrSP = snapSP.map(doc => {
+          genderMap[doc.id] = doc.gender;
+          indicatorMap[doc.id] = getIndicator(doc.poin_pelanggaran);
 
-      const arrSP = (snapSP || []).map(doc => ({
-          ...doc,
-          classId: doc.class_id,
-          poinPelanggaran: doc.poin_pelanggaran,
-          spIssuedLevel: doc.sp_issued_level
-      })).filter(student => {
+          return {
+              ...doc,
+              classId: doc.classes?.name || doc.class_id,
+              poinPelanggaran: doc.poin_pelanggaran,
+              spIssuedLevel: doc.sp_issued_level
+          };
+      }).filter(student => {
           if ((student.classId || '').toUpperCase().startsWith('ALUMNI')) return false;
           const hpMerah = Math.abs(student.poinPelanggaran || 0);
           const issued = student.spIssuedLevel || 0;
@@ -181,6 +198,9 @@ export default function Home() {
           return false;
       });
       setSpStudents(arrSP);
+
+      setStudentIndicators(indicatorMap);
+      setStudentGenders(genderMap);
     } catch (error) {
       console.error("Error fetching top records:", error);
     }
