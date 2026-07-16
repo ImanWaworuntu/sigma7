@@ -19,15 +19,26 @@ if (!urlMatch || !keyMatch) {
 
 const supabase = createClient(urlMatch[1].trim(), keyMatch[1].trim());
 
-const maleNames = [
-  "Budi", "Dimas", "Rian", "Bayu", "Reza", "Eko", "Joko", "Rizky", "Agung",
-  "Ilham", "Indra", "Kevin", "Wahyu", "Dika", "Fajar", "Yoga", "Dedi", "Hendra"
-];
+// Generator Nama Unik (Sistem Suku Kata) untuk menghindari duplikat di 1000+ siswa
+const malePrefixes = ["Ad", "Ar", "Bim", "Bud", "Cahy", "Dan", "Dim", "Ek", "Faj", "Gil", "Hend", "Ind", "Jok", "Kev", "Luk", "Mah", "Nug", "Oky", "Pan", "Riz", "Sat", "Teg", "Unt", "Wah", "Yog", "Zain"];
+const maleSuffixes = ["a", "o", "i", "an", "ar", "awan", "anto", "adi", "aka", "anda", "at", "as", "al", "am", "en", "er", "es", "et", "id", "ir", "is", "in", "on", "ur", "us"];
 
-const femaleNames = [
-  "Ayu", "Siti", "Rini", "Dewi", "Putri", "Sari", "Dian", "Indah", "Maya",
-  "Rika", "Nisa", "Siska", "Mega", "Ratna", "Fitri", "Wati", "Yuni", "Wulan"
-];
+const femalePrefixes = ["Ay", "Ann", "Bel", "Citr", "Dew", "Din", "El", "Fit", "Git", "Han", "Ind", "Int", "Kart", "Lest", "Meg", "Nis", "Nov", "Put", "Rin", "Rat", "Sit", "Sisk", "Tiar", "Ut", "Vid", "Wul", "Yen", "Zel"];
+const femaleSuffixes = ["a", "i", "e", "o", "u", "an", "in", "en", "ah", "ih", "awati", "ami", "ari", "ati", "asi", "ani", "ila", "ima", "ira", "isa", "ita", "iya"];
+
+const generatedMaleNames = [];
+for (const p of malePrefixes) {
+  for (const s of maleSuffixes) {
+    generatedMaleNames.push(p + s);
+  }
+} // 26 * 25 = 650 unique names
+
+const generatedFemaleNames = [];
+for (const p of femalePrefixes) {
+  for (const s of femaleSuffixes) {
+    generatedFemaleNames.push(p + s);
+  }
+} // 28 * 22 = 616 unique names
 
 const classes = [];
 // Generate Kelas X.1 - X.10
@@ -54,6 +65,9 @@ async function injectData() {
 
   console.log(`Memulai injeksi data untuk ${classes.length} kelas...`);
   
+  let globalMaleCounter = 0;
+  let globalFemaleCounter = 0;
+
   for (const className of classes) {
     // Insert Kelas
     const { data: classData, error: classError } = await supabase
@@ -72,7 +86,7 @@ async function injectData() {
     // Siapkan 18 Pria
     for (let i = 0; i < 18; i++) {
       studentsToInsert.push({
-        name: maleNames[i % maleNames.length],
+        name: generatedMaleNames[globalMaleCounter % generatedMaleNames.length],
         class_id: classId,
         gender: 'Pria',
         nis: `1${className.replace(/\./g, '')}0${i+1}`.substring(0,8),
@@ -82,12 +96,13 @@ async function injectData() {
         poin_penghargaan: 0,
         sp_issued_level: 0
       });
+      globalMaleCounter++;
     }
 
     // Siapkan 18 Wanita
     for (let i = 0; i < 18; i++) {
       studentsToInsert.push({
-        name: femaleNames[i % femaleNames.length],
+        name: generatedFemaleNames[globalFemaleCounter % generatedFemaleNames.length],
         class_id: classId,
         gender: 'Wanita',
         nis: `2${className.replace(/\./g, '')}0${i+1}`.substring(0,8),
@@ -97,6 +112,7 @@ async function injectData() {
         poin_penghargaan: 0,
         sp_issued_level: 0
       });
+      globalFemaleCounter++;
     }
 
     // Insert 36 Siswa untuk kelas ini
