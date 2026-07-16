@@ -46,6 +46,11 @@ export const getClasses = async () => {
 };
 
 export const addClass = async (classData) => {
+  const { data: existing } = await supabase.from('classes').select('id').eq('name', classData.name).maybeSingle();
+  if (existing) {
+    throw new Error("Kelas dengan nama tersebut sudah ada!");
+  }
+  
   const { data, error } = await supabase.from('classes').insert([classData]).select();
   if (error) throw error;
   return { id: data[0].id, ...data[0] };
