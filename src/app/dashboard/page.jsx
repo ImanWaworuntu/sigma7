@@ -55,7 +55,7 @@ export default function Home() {
         supabase
           .from('students')
           .select('id, name, class_id, gender, poin_pelanggaran, sp_issued_level, classes(name)')
-          .lte('poin_pelanggaran', -50)
+          .lte('poin_pelanggaran', -30)
           .order('poin_pelanggaran', { ascending: true })
       ]);
 
@@ -72,9 +72,11 @@ export default function Home() {
 
       const getIndicator = (poin_pelanggaran) => {
         const hpMerah = Math.abs(poin_pelanggaran || 0);
-        if (hpMerah >= 200) return '⚠️⚠️⚠️';
-        if (hpMerah >= 150) return '⚠️⚠️';
-        if (hpMerah >= 50) return '⚠️';
+        if (hpMerah >= 200) return '⚠️⚠️⚠️⚠️⚠️';
+        if (hpMerah >= 150) return '⚠️⚠️⚠️⚠️';
+        if (hpMerah >= 100) return '⚠️⚠️⚠️';
+        if (hpMerah >= 50) return '⚠️⚠️';
+        if (hpMerah >= 30) return '⚠️';
         return '';
       };
 
@@ -192,9 +194,11 @@ export default function Home() {
           if ((student.classId || '').toUpperCase().startsWith('ALUMNI')) return false;
           const hpMerah = Math.abs(student.poinPelanggaran || 0);
           const issued = student.spIssuedLevel || 0;
-          if (hpMerah >= 200 && issued < 3) return true;
-          if (hpMerah >= 150 && issued < 2) return true;
-          if (hpMerah >= 50 && hpMerah < 150 && issued < 1) return true;
+          if (hpMerah >= 200 && issued < 5) return true;
+          if (hpMerah >= 150 && issued < 4) return true;
+          if (hpMerah >= 100 && issued < 3) return true;
+          if (hpMerah >= 50 && issued < 2) return true;
+          if (hpMerah >= 30 && issued < 1) return true;
           return false;
       });
       setSpStudents(arrSP);
@@ -385,19 +389,22 @@ export default function Home() {
                     {spStudents.map((student) => {
                         const hpMerah = Math.abs(student.poinPelanggaran || 0);
                         const issued = student.spIssuedLevel || 0;
-                        let spLevel = 'SP 1';
-                        if (hpMerah >= 200 && issued < 3) spLevel = 'SP 3';
-                        else if (hpMerah >= 150 && issued < 2) spLevel = 'SP 2';
+                        let spLevel = 'Pemberitahuan kepada Orangtua/Wali';
+                        if (hpMerah >= 200 && issued < 5) spLevel = 'Penyerahan Murid kepada Orangtua/Wali';
+                        else if (hpMerah >= 150 && issued < 4) spLevel = 'Panggilan III Orangtua/Wali';
+                        else if (hpMerah >= 100 && issued < 3) spLevel = 'Panggilan II Orangtua/Wali';
+                        else if (hpMerah >= 50 && issued < 2) spLevel = 'Panggilan I Orangtua/Wali';
 
                         return (
                             <Link href={`/siswa/detail?id=${student.id}`} key={student.id} className="bg-red-50 border border-red-200 rounded-xl p-3 flex justify-between items-center shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all group">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 bg-red-100 text-red-600 font-bold rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        {spLevel}
+                                    <div className="h-10 w-10 shrink-0 bg-red-100 text-red-600 font-bold rounded-full flex items-center justify-center group-hover:scale-110 transition-transform text-lg">
+                                        ⚠️
                                     </div>
                                     <div>
-                                        <p className={`font-bold leading-tight ${student.gender === 'Wanita' ? 'text-pink-600' : student.gender === 'Pria' ? 'text-blue-600' : 'text-red-900'}`}>{student.name}</p>
-                                        <p className="text-[10px] text-red-700 font-medium">{student.classId} • {hpMerah} Poin</p>
+                                        <p className="font-bold text-red-700 text-xs leading-tight mb-0.5">{spLevel}</p>
+                                        <p className={`font-bold leading-tight text-sm ${student.gender === 'Wanita' ? 'text-pink-600' : student.gender === 'Pria' ? 'text-blue-600' : 'text-slate-800'}`}>{student.name}</p>
+                                        <p className="text-[10px] text-red-600 font-medium">{student.classId} • {hpMerah} Poin</p>
                                     </div>
                                 </div>
                                 <div className="bg-red-600 text-white rounded-full p-1.5 shadow-sm">

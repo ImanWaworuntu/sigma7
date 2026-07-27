@@ -59,7 +59,7 @@ export default function SiswaPage() {
 
       if (filter === 'Bermasalah') matchFilter = (s.poinPelanggaran || 0) < 0 && !isAlumni;
       else if (filter === 'Berprestasi') matchFilter = (s.poinPenghargaan || 0) > 0 && !isAlumni;
-      else if (filter === 'Perlu SP') matchFilter = (s.poinPelanggaran || 0) <= -50 && !isAlumni;
+      else if (filter === 'Perlu SP') matchFilter = (s.poinPelanggaran || 0) <= -30 && !isAlumni;
       else if (filter === 'Kelas X') matchFilter = (s.classId || '').toUpperCase().startsWith('X') && !(s.classId || '').toUpperCase().startsWith('XI') && !(s.classId || '').toUpperCase().startsWith('XII');
       else if (filter === 'Kelas XI') matchFilter = (s.classId || '').toUpperCase().startsWith('XI') && !(s.classId || '').toUpperCase().startsWith('XII');
       else if (filter === 'Kelas XII') matchFilter = (s.classId || '').toUpperCase().startsWith('XII') && !isAlumni;
@@ -165,7 +165,8 @@ export default function SiswaPage() {
                                   'bg-slate-100 text-slate-500';
               let cardBg = 'bg-white border-slate-100';
               if (hpMerah >= 150) cardBg = 'bg-red-50 border-red-200';
-              else if (hpMerah >= 50) cardBg = 'bg-orange-50 border-orange-200';
+              else if (hpMerah >= 100) cardBg = 'bg-orange-50 border-orange-200';
+              else if (hpMerah >= 30) cardBg = 'bg-yellow-50 border-yellow-200';
 
               let nameColor = 'text-slate-800 group-hover:text-primary-600';
               if (student.gender === 'Wanita') nameColor = 'text-pink-600 group-hover:text-pink-700';

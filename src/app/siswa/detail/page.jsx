@@ -119,17 +119,25 @@ function SiswaProfileContent() {
   let bannerColor = '';
   let pendingSpLevel = 0;
 
-  if (hpMerah >= 200 && issued < 3) {
-    bannerText = 'Siswa telah mencapai batas maksimal Pelanggaran. SP 3 segera diproses!';
+  if (hpMerah >= 200 && issued < 5) {
+    bannerText = 'Jika poin pelanggaran mencapai 200 "Penyerahan Murid kepada Orangtua/Wali"';
     bannerColor = 'bg-red-100 text-red-700 border-red-200';
-    pendingSpLevel = 3;
-  } else if (hpMerah >= 150 && issued < 2) {
-    bannerText = 'Pelanggaran Kritis (≥150). Siswa memerlukan SP 2.';
+    pendingSpLevel = 5;
+  } else if (hpMerah >= 150 && issued < 4) {
+    bannerText = 'Jika poin pelanggaran mencapai 150 "Panggilan III Orangtua/Wali"';
+    bannerColor = 'bg-red-50 text-red-700 border-red-200';
+    pendingSpLevel = 4;
+  } else if (hpMerah >= 100 && issued < 3) {
+    bannerText = 'Jika poin pelanggaran mencapai 100 "Panggilan II Orangtua/Wali"';
     bannerColor = 'bg-orange-100 text-orange-700 border-orange-200';
-    pendingSpLevel = 2;
-  } else if (hpMerah >= 50 && hpMerah < 150 && issued < 1) {
-    bannerText = 'Pelanggaran Menumpuk (≥50). Siswa memerlukan SP 1.';
+    pendingSpLevel = 3;
+  } else if (hpMerah >= 50 && issued < 2) {
+    bannerText = 'Jika poin pelanggaran mencapai 50 "Panggilan I Orangtua/Wali"';
     bannerColor = 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    pendingSpLevel = 2;
+  } else if (hpMerah >= 30 && issued < 1) {
+    bannerText = 'Jika poin pelanggaran mencapai 30 "Pemberitahuan kepada Orangtua/Wali"';
+    bannerColor = 'bg-yellow-50 text-yellow-700 border-yellow-200';
     pendingSpLevel = 1;
   }
 
@@ -254,10 +262,10 @@ function SiswaProfileContent() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6 flex flex-col items-center text-center relative print:shadow-none print:border-slate-300">
           
           {/* Warning SP Indicators */}
-          {hpMerah >= 50 && (
+          {hpMerah >= 30 && (
             <div className="mb-4 flex items-center justify-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-full border border-red-100 text-sm font-bold shadow-sm">
                 <span className="text-lg tracking-tighter">
-                    {hpMerah >= 200 ? '⚠️⚠️⚠️' : hpMerah >= 150 ? '⚠️⚠️' : '⚠️'}
+                    {hpMerah >= 200 ? '⚠️⚠️⚠️⚠️⚠️' : hpMerah >= 150 ? '⚠️⚠️⚠️⚠️' : hpMerah >= 100 ? '⚠️⚠️⚠️' : hpMerah >= 50 ? '⚠️⚠️' : '⚠️'}
                 </span>
                 <span>Terindikasi Peringatan SP</span>
             </div>
