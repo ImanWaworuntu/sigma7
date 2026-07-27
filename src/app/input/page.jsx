@@ -50,6 +50,7 @@ function InputForm() {
   const [type, setType] = useState(null); // 'reward' or 'violation'
   const [selectedItem, setSelectedItem] = useState(null);
   const [searchItem, setSearchItem] = useState(''); 
+  const [filterCategory, setFilterCategory] = useState(''); 
   const [tanggal, setTanggal] = useState(new Date().toISOString().split('T')[0]);
   const [photo, setPhoto] = useState(null);
   const [photoBase64, setPhotoBase64] = useState(null);
@@ -335,6 +336,34 @@ function InputForm() {
             {/* Pencarian Keterangan */}
             <div className="mb-4">
               <h2 className="text-lg font-bold text-slate-800 mb-2">Cari Keterangan</h2>
+              
+              {type === 'violation' && (
+                <div className="mb-3 relative">
+                  <select 
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="w-full bg-white border-2 border-slate-200 focus:border-primary-500 rounded-xl py-3 px-4 appearance-none outline-none transition-colors text-sm shadow-sm font-semibold text-slate-700"
+                  >
+                    <option value="">-- Semua Kategori --</option>
+                    <option value="Keterlambatan">Keterlambatan</option>
+                    <option value="Kehadiran">Kehadiran</option>
+                    <option value="Pakaian">Pakaian</option>
+                    <option value="Kepribadian">Kepribadian</option>
+                    <option value="Ketertiban">Ketertiban</option>
+                    <option value="Merokok">Merokok</option>
+                    <option value="Pornografi/Pornoaksi">Pornografi/Pornoaksi</option>
+                    <option value="Senjata Tajam">Senjata Tajam</option>
+                    <option value="Narkoba dan Miras">Narkoba dan Miras</option>
+                    <option value="Berkelahi/Tawuran">Berkelahi/Tawuran</option>
+                    <option value="Intimidasi/Ancaman">Intimidasi/Ancaman</option>
+                    <option value="Berkendaraan">Berkendaraan</option>
+                  </select>
+                  <div className="absolute right-3 top-3.5 pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                  </div>
+                </div>
+              )}
+
               <div className="relative">
                 <input 
                   type="text" 
@@ -351,7 +380,10 @@ function InputForm() {
             
             <div className="bg-transparent overflow-hidden mb-6 flex flex-col gap-3 max-h-[35vh] overflow-y-auto pb-2 px-1">
               {type === 'violation' ? (
-                violations.filter(i => i.desc.toLowerCase().includes(searchItem.toLowerCase())).map((item) => {
+                violations.filter(i => {
+                  if (filterCategory && i.category !== filterCategory) return false;
+                  return i.desc.toLowerCase().includes(searchItem.toLowerCase());
+                }).map((item) => {
                   let cardColor = selectedItem?.id === item.id ? "bg-red-50 border-red-500 ring-2 ring-red-500/50" : "bg-white border-red-200 hover:border-red-400";
                   return (
                     <div key={item.id} className={`p-4 rounded-xl border-2 transition-all cursor-pointer shadow-sm active:scale-[0.98] ${cardColor}`} onClick={() => setSelectedItem(item)}>
