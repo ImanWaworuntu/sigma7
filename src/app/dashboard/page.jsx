@@ -46,15 +46,15 @@ export default function Home() {
       const [recordsRes, absenceRes, spRes] = await Promise.all([
         supabase
           .from('records')
-          .select('*, students(name, class_id, gender, poin_pelanggaran, classes(name))')
+          .select('student_id, points, students(name, class_id, gender, poin_pelanggaran, classes(name))')
           .gte('created_at', isoStartDate),
         supabase
           .from('attendance')
-          .select('*, students(name, class_id, gender, poin_pelanggaran, classes(name))')
+          .select('student_id, status, students(name, class_id, gender, poin_pelanggaran, classes(name))')
           .gte('created_at', isoStartDate),
         supabase
           .from('students')
-          .select('*, classes(name)')
+          .select('id, name, class_id, gender, poin_pelanggaran, sp_issued_level, classes(name)')
           .lte('poin_pelanggaran', -50)
           .order('poin_pelanggaran', { ascending: true })
       ]);

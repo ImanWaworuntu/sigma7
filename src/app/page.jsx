@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -22,8 +22,8 @@ export default function LoginPage() {
     <div className="flex-1 bg-slate-50 min-h-screen flex flex-col justify-center px-6">
       <div className="bg-white p-8 rounded-3xl shadow-lg border border-slate-100">
         <div className="text-center mb-8">
-          <div className="h-28 w-28 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md p-1 border border-slate-100">
-            <img src="/logo-login2.png" alt="Logo SMAN 7" className="h-full w-full object-contain rounded-xl" />
+          <div className="h-28 w-28 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md p-1 border border-slate-100 relative">
+            <Image src="/logo-login2.png" alt="Logo SMAN 7" width={112} height={112} className="h-full w-full object-contain rounded-xl" priority />
           </div>
           <h1 className="text-2xl font-bold text-slate-800">SIGMA 7</h1>
           <p className="text-sm text-slate-500 mt-1">Sistem Siswa Integrasi & Garda Moral</p>

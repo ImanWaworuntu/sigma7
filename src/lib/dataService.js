@@ -1,26 +1,27 @@
 import { supabase } from './supabase';
 
+let cachedRules = null;
+let cachedClasses = null;
+
 // --- RULES (Master Pelanggaran & Penghargaan) ---
 export const getRules = async (type = null) => {
-  let query = supabase.from('rules').select('*');
+  if (!cachedRules) {
+    const { data, error } = await supabase.from('rules').select('id, name, type, points, created_at');
+    if (error) {
+      console.error("Error fetching rules:", error);
+      return [];
+    }
+    cachedRules = data;
+  }
   
+  let rules = [...cachedRules];
   if (type) {
-    query = query.eq('type', type);
-    query = query.order('points', { ascending: type !== 'pelanggaran' });
+    rules = rules.filter(r => r.type === type);
+    rules.sort((a, b) => type !== 'pelanggaran' ? a.points - b.points : b.points - a.points);
   } else {
-    query = query.order('created_at', { ascending: false });
-  }
-  
-  const { data, error } = await query;
-  if (error) {
-    console.error("Error fetching rules:", error);
-    return [];
-  }
-  
-  let rules = data;
-  if (!type) {
     rules.sort((a, b) => Math.abs(a.points) - Math.abs(b.points));
   }
+  
   return rules.map(r => ({ ...r, desc: r.name }));
 };
 
@@ -29,19 +30,23 @@ export const addRule = async (ruleData) => {
   delete payload.desc;
   const { data, error } = await supabase.from('rules').insert([payload]).select();
   if (error) throw error;
+  cachedRules = null;
   return { id: data[0].id, ...data[0], desc: data[0].name };
 };
 
 export const deleteRule = async (ruleId) => {
   const { error } = await supabase.from('rules').delete().eq('id', ruleId);
   if (error) throw error;
+  cachedRules = null;
   return true;
 };
 
 // --- CLASSES ---
 export const getClasses = async () => {
-  const { data, error } = await supabase.from('classes').select('*').order('name', { ascending: true });
+  if (cachedClasses) return cachedClasses;
+  const { data, error } = await supabase.from('classes').select('id, name').order('name', { ascending: true });
   if (error) throw error;
+  cachedClasses = data;
   return data;
 };
 
@@ -53,18 +58,20 @@ export const addClass = async (classData) => {
   
   const { data, error } = await supabase.from('classes').insert([classData]).select();
   if (error) throw error;
+  cachedClasses = null;
   return { id: data[0].id, ...data[0] };
 };
 
 export const deleteClass = async (classId) => {
   const { error } = await supabase.from('classes').delete().eq('id', classId);
   if (error) throw error;
+  cachedClasses = null;
   return true;
 };
 
 // --- STUDENTS ---
 export const getStudents = async (className = null) => {
-  let query = supabase.from('students').select('*, classes(name)');
+  let query = supabase.from('students').select('id, name, class_id, gender, poin_pelanggaran, poin_penghargaan, sp_issued_level, classes(name)');
   
   if (className) {
     const { data: cls } = await supabase.from('classes').select('id').eq('name', className).single();

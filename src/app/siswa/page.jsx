@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { getStudents, getClasses } from '@/lib/dataService';
 
 export default function SiswaPage() {
@@ -49,31 +49,33 @@ export default function SiswaPage() {
   };
 
   // Filter & Search Logic
-  const filteredStudents = students.filter(s => {
-    const matchSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        (s.classId || '').toLowerCase().includes(searchTerm.toLowerCase());
-    
-    let matchFilter = true;
-    const isAlumni = (s.classId || '').toUpperCase().startsWith('ALUMNI');
+  const filteredStudents = useMemo(() => {
+    return students.filter(s => {
+      const matchSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (s.classId || '').toLowerCase().includes(searchTerm.toLowerCase());
+      
+      let matchFilter = true;
+      const isAlumni = (s.classId || '').toUpperCase().startsWith('ALUMNI');
 
-    if (filter === 'Bermasalah') matchFilter = (s.poinPelanggaran || 0) < 0 && !isAlumni;
-    else if (filter === 'Berprestasi') matchFilter = (s.poinPenghargaan || 0) > 0 && !isAlumni;
-    else if (filter === 'Perlu SP') matchFilter = (s.poinPelanggaran || 0) <= -50 && !isAlumni;
-    else if (filter === 'Kelas X') matchFilter = (s.classId || '').toUpperCase().startsWith('X') && !(s.classId || '').toUpperCase().startsWith('XI') && !(s.classId || '').toUpperCase().startsWith('XII');
-    else if (filter === 'Kelas XI') matchFilter = (s.classId || '').toUpperCase().startsWith('XI') && !(s.classId || '').toUpperCase().startsWith('XII');
-    else if (filter === 'Kelas XII') matchFilter = (s.classId || '').toUpperCase().startsWith('XII') && !isAlumni;
-    else if (filter === 'Alumni') matchFilter = isAlumni;
-    else if (filter === 'Semua') matchFilter = !isAlumni;
-    else matchFilter = s.classId === filter;
+      if (filter === 'Bermasalah') matchFilter = (s.poinPelanggaran || 0) < 0 && !isAlumni;
+      else if (filter === 'Berprestasi') matchFilter = (s.poinPenghargaan || 0) > 0 && !isAlumni;
+      else if (filter === 'Perlu SP') matchFilter = (s.poinPelanggaran || 0) <= -50 && !isAlumni;
+      else if (filter === 'Kelas X') matchFilter = (s.classId || '').toUpperCase().startsWith('X') && !(s.classId || '').toUpperCase().startsWith('XI') && !(s.classId || '').toUpperCase().startsWith('XII');
+      else if (filter === 'Kelas XI') matchFilter = (s.classId || '').toUpperCase().startsWith('XI') && !(s.classId || '').toUpperCase().startsWith('XII');
+      else if (filter === 'Kelas XII') matchFilter = (s.classId || '').toUpperCase().startsWith('XII') && !isAlumni;
+      else if (filter === 'Alumni') matchFilter = isAlumni;
+      else if (filter === 'Semua') matchFilter = !isAlumni;
+      else matchFilter = s.classId === filter;
 
-    return matchSearch && matchFilter;
-  }).sort((a, b) => {
-    if (sortBy === 'name-asc') return (a.name || '').localeCompare(b.name || '');
-    if (sortBy === 'name-desc') return (b.name || '').localeCompare(a.name || '');
-    if (sortBy === 'violation-desc') return Math.abs(b.poinPelanggaran || 0) - Math.abs(a.poinPelanggaran || 0);
-    if (sortBy === 'reward-desc') return (b.poinPenghargaan || 0) - (a.poinPenghargaan || 0);
-    return 0;
-  });
+      return matchSearch && matchFilter;
+    }).sort((a, b) => {
+      if (sortBy === 'name-asc') return (a.name || '').localeCompare(b.name || '');
+      if (sortBy === 'name-desc') return (b.name || '').localeCompare(a.name || '');
+      if (sortBy === 'violation-desc') return Math.abs(b.poinPelanggaran || 0) - Math.abs(a.poinPelanggaran || 0);
+      if (sortBy === 'reward-desc') return (b.poinPenghargaan || 0) - (a.poinPenghargaan || 0);
+      return 0;
+    });
+  }, [students, searchTerm, filter, sortBy]);
 
   const visibleStudents = filteredStudents.slice(0, displayLimit);
 
