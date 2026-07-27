@@ -31,7 +31,7 @@ export default function MasterData() {
   const [ruleType, setRuleType] = useState('violation');
   const [ruleDesc, setRuleDesc] = useState('');
   const [rulePoints, setRulePoints] = useState('');
-  const [ruleCategory, setRuleCategory] = useState('Ringan');
+  const [ruleCategory, setRuleCategory] = useState('Keterlambatan');
 
 
   useEffect(() => {
@@ -262,9 +262,18 @@ export default function MasterData() {
                 </select>
                 {ruleType === 'violation' && (
                   <select value={ruleCategory} onChange={e=>setRuleCategory(e.target.value)} className="flex-1 border rounded-lg p-2 text-sm outline-none">
-                    <option value="Ringan">Ringan</option>
-                    <option value="Sedang">Sedang</option>
-                    <option value="Berat">Berat</option>
+                    <option value="Keterlambatan">Keterlambatan</option>
+                    <option value="Kehadiran">Kehadiran</option>
+                    <option value="Pakaian">Pakaian</option>
+                    <option value="Kepribadian">Kepribadian</option>
+                    <option value="Ketertiban">Ketertiban</option>
+                    <option value="Merokok">Merokok</option>
+                    <option value="Pornografi/Pornoaksi">Pornografi/Pornoaksi</option>
+                    <option value="Senjata Tajam">Senjata Tajam</option>
+                    <option value="Narkoba dan Miras">Narkoba dan Miras</option>
+                    <option value="Berkelahi/Tawuran">Berkelahi/Tawuran</option>
+                    <option value="Intimidasi/Ancaman">Intimidasi/Ancaman</option>
+                    <option value="Berkendaraan">Berkendaraan</option>
                   </select>
                 )}
               </div>

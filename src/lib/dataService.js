@@ -6,7 +6,7 @@ let cachedClasses = null;
 // --- RULES (Master Pelanggaran & Penghargaan) ---
 export const getRules = async (type = null) => {
   if (!cachedRules) {
-    const { data, error } = await supabase.from('rules').select('id, name, type, points, created_at');
+    const { data, error } = await supabase.from('rules').select('id, name, type, points, category, created_at');
     if (error) {
       console.error("Error fetching rules:", error);
       return [];
