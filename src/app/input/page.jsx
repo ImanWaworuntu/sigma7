@@ -132,7 +132,7 @@ function InputForm() {
           date: tanggal,
           hasPhoto: !!photoBase64,
           photoBase64: photoBase64,
-          reportedBy: user?.username || 'Sistem'
+          reportedBy: user?.nama_lengkap || user?.username || 'Sistem'
         });
       });
 

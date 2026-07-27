@@ -1,6 +1,7 @@
 "use client"
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { supabase } from './supabase';
 
 const AuthContext = createContext();
 
@@ -19,35 +20,46 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = (username, password) => {
-    let role = null;
-    // Admin access (also includes Guru access)
+  const login = async (username, password) => {
+    // Admin access (Exclusive)
     if (
       (username === 'admin' && password === 'admin') || 
       (username === 'iman.waw@gmail.com' && password === 'sigma123')
     ) {
-      role = 'admin';
-    } 
-    // Guru access
-    else if (username === 'guru' && password === 'guru') {
-      role = 'guru';
-    }
-
-    // OSIS access
-    else if (username.startsWith('osis') && password === 'osis') {
-      role = 'osis';
-    }
-
-    if (role) {
-      const userData = { username, role };
+      const userData = { username, role: 'admin', nama_lengkap: 'Administrator' };
       setUser(userData);
       sessionStorage.setItem('sigma_user', JSON.stringify(userData));
-      if (role === 'osis') {
-        router.push('/upacara');
-      } else {
-        router.push('/dashboard');
-      }
+      router.push('/dashboard');
       return true;
+    } 
+
+    // Cek Guru & OSIS di database
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', username)
+        .eq('password', password)
+        .single();
+
+      if (data && !error) {
+        const userData = { 
+          username: data.username, 
+          role: data.role, 
+          nama_lengkap: data.nama_lengkap 
+        };
+        setUser(userData);
+        sessionStorage.setItem('sigma_user', JSON.stringify(userData));
+        
+        if (data.role === 'osis') {
+          router.push('/upacara');
+        } else {
+          router.push('/dashboard');
+        }
+        return true;
+      }
+    } catch (err) {
+      console.error("Login DB error:", err);
     }
     return false;
   };

@@ -6,7 +6,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { 
   getRules, addRule, deleteRule, 
   getClasses, addClass, deleteClass, 
-  getStudents, moveStudents, graduateClass12, cleanAlumniRecords
+  getStudents, moveStudents, graduateClass12, cleanAlumniRecords,
+  getAppUsers, addAppUser, deleteAppUser
 } from '@/lib/dataService';
 
 import { toast, Toaster } from 'react-hot-toast';
@@ -33,6 +34,13 @@ export default function MasterData() {
   const [rulePoints, setRulePoints] = useState('');
   const [ruleCategory, setRuleCategory] = useState('Keterlambatan');
 
+  // App Users State
+  const [appUsers, setAppUsers] = useState([]);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserUsername, setNewUserUsername] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('guru');
+
 
   useEffect(() => {
     if (!authLoading && user?.role !== 'admin') {
@@ -44,9 +52,10 @@ export default function MasterData() {
 
   const fetchInitData = async () => {
     setLoading(true);
-    const [cls, rls] = await Promise.all([getClasses(), getRules()]);
+    const [cls, rls, usersList] = await Promise.all([getClasses(), getRules(), getAppUsers()]);
     setClasses(cls);
     setRules(rls);
+    setAppUsers(usersList);
     setLoading(false);
   };
 
@@ -101,13 +110,46 @@ export default function MasterData() {
   };
 
   const handleDeleteRule = async (id) => {
-    if (!confirm("Hapus aturan ini?")) return;
+    if (!confirm('Hapus aturan ini?')) return;
     try {
       await deleteRule(id);
       toast.success('Aturan dihapus');
       const rls = await getRules(); setRules(rls);
     } catch (e) {
-      toast.error('Gagal hapus aturan');
+      toast.error('Gagal hapus');
+    }
+  };
+
+  // --- APP USERS ---
+  const handleAddAppUser = async (e) => {
+    e.preventDefault();
+    if (!newUserName || !newUserUsername || !newUserPassword) return;
+    try {
+      await addAppUser({
+        nama_lengkap: newUserName,
+        username: newUserUsername,
+        password: newUserPassword,
+        role: newUserRole
+      });
+      toast.success('User berhasil ditambahkan');
+      setNewUserName('');
+      setNewUserUsername('');
+      setNewUserPassword('');
+      const usersList = await getAppUsers(); setAppUsers(usersList);
+    } catch (e) {
+      console.error(e);
+      toast.error('Gagal tambah user (username mungkin sudah ada)');
+    }
+  };
+
+  const handleDeleteAppUser = async (id, nama) => {
+    if (!confirm(`Hapus akun ${nama}?`)) return;
+    try {
+      await deleteAppUser(id);
+      toast.success('Akun dihapus');
+      const usersList = await getAppUsers(); setAppUsers(usersList);
+    } catch (e) {
+      toast.error('Gagal hapus akun');
     }
   };
 
@@ -196,7 +238,7 @@ export default function MasterData() {
         csvRows.push(row.join(','));
       });
 
-      const blob = new Blob([csvRows.join('\\n')], { type: 'text/csv' });
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.setAttribute('hidden', '');
@@ -308,18 +350,67 @@ export default function MasterData() {
                     placeholder="Nama Kelas (ex: X.1)" 
                     className="flex-1 border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500"
                     value={newClassName}
-                    onChange={e => setNewClassName(e.target.value)}
+                    onChange={(e) => setNewClassName(e.target.value)}
                 />
-                <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold">+</button>
+                <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg font-bold text-sm">Tambah</button>
             </form>
             
-            <div className="max-h-40 overflow-y-auto flex flex-wrap gap-2">
-                {classes.map(c => (
-                    <div key={c.id} className="bg-slate-100 text-slate-700 text-xs px-3 py-1.5 rounded-full flex items-center gap-2 border border-slate-200">
-                        <span className="font-semibold">{c.name}</span>
-                        <button onClick={() => handleDeleteClass(c.id, c.name)} className="text-red-500 hover:text-red-700 font-bold">&times;</button>
-                    </div>
-                ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto max-h-48 border-t pt-2">
+              {classes.map(c => (
+                <div key={c.id} className="flex justify-between items-center bg-white border border-slate-100 p-2 rounded shadow-sm text-sm">
+                  <span className="font-semibold">{c.name}</span>
+                  <button onClick={() => handleDeleteClass(c.id, c.name)} className="text-red-500 hover:text-red-700 p-1">&times;</button>
+                </div>
+              ))}
+            </div>
+        </div>
+
+        {/* MANAJEMEN AKUN */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 lg:col-span-2">
+            <h2 className="font-bold text-slate-800 mb-3 border-b pb-2">Manajemen Akun (Guru & OSIS)</h2>
+            <form onSubmit={handleAddAppUser} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <input type="text" placeholder="Nama Lengkap" value={newUserName} onChange={e=>setNewUserName(e.target.value)} className="border rounded-lg p-2 text-sm outline-none lg:col-span-1" required/>
+              <input type="text" placeholder="Username (login)" value={newUserUsername} onChange={e=>setNewUserUsername(e.target.value)} className="border rounded-lg p-2 text-sm outline-none lg:col-span-1" required/>
+              <input type="password" placeholder="Password" value={newUserPassword} onChange={e=>setNewUserPassword(e.target.value)} className="border rounded-lg p-2 text-sm outline-none lg:col-span-1" required/>
+              <select value={newUserRole} onChange={e=>setNewUserRole(e.target.value)} className="border rounded-lg p-2 text-sm outline-none lg:col-span-1">
+                <option value="guru">Guru</option>
+                <option value="osis">OSIS</option>
+              </select>
+              <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg font-bold text-sm lg:col-span-1">Tambah User</button>
+            </form>
+
+            <div className="overflow-x-auto border border-slate-100 rounded-xl max-h-64 overflow-y-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-slate-700 font-bold sticky top-0 shadow-sm">
+                  <tr>
+                    <th className="px-4 py-3">Nama Lengkap</th>
+                    <th className="px-4 py-3">Username</th>
+                    <th className="px-4 py-3">Role</th>
+                    <th className="px-4 py-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {appUsers.map(u => (
+                    <tr key={u.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 font-semibold text-slate-800">{u.nama_lengkap}</td>
+                      <td className="px-4 py-3">{u.username}</td>
+                      <td className="px-4 py-3 capitalize">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${u.role === 'guru' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => handleDeleteAppUser(u.id, u.nama_lengkap)} className="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-100">Hapus</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {appUsers.length === 0 && (
+                    <tr>
+                      <td colSpan="4" className="px-4 py-6 text-center text-slate-500">Belum ada akun guru/osis terdaftar.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
         </div>
 

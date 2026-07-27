@@ -440,3 +440,25 @@ export const saveAttendance = async (attendanceData) => {
 export const getTopAbsences = async (limitCount = 5) => {
   return [];
 };
+
+// --- APP USERS (Manajemen Akun Guru & OSIS) ---
+export const getAppUsers = async () => {
+  const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+  if (error) {
+    console.error("Error fetching users:", error);
+    return [];
+  }
+  return data;
+};
+
+export const addAppUser = async (userData) => {
+  const { data, error } = await supabase.from('users').insert([userData]).select();
+  if (error) throw error;
+  return data;
+};
+
+export const deleteAppUser = async (id) => {
+  const { error } = await supabase.from('users').delete().eq('id', id);
+  if (error) throw error;
+  return true;
+};
