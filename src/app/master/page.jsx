@@ -617,6 +617,177 @@ export default function MasterData() {
                     className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-lg text-sm transition-colors shadow-sm disabled:opacity-50"
                 >
                     {cleaning ? 'Membersihkan...' : 'Hapus Rekam Jejak & Foto'}
+              ))}
+            </div>
+        </div>
+
+        {/* MANAJEMEN AKUN GURU */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 lg:col-span-2">
+            <h2 className="font-bold text-slate-800 mb-3 border-b pb-2">Manajemen Akun Guru</h2>
+            <form onSubmit={handleSaveGuru} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <input type="text" placeholder="Nama Lengkap" value={guruName} onChange={e=>setGuruName(e.target.value)} className="border rounded-lg p-2 text-sm outline-none" required/>
+              <input type="text" placeholder="Username (login)" value={guruUsername} onChange={e=>setGuruUsername(e.target.value)} className="border rounded-lg p-2 text-sm outline-none" required/>
+              <input type="password" placeholder={editingGuruId ? "Password Baru (opsional)" : "Password"} value={guruPassword} onChange={e=>setGuruPassword(e.target.value)} className="border rounded-lg p-2 text-sm outline-none" required={!editingGuruId}/>
+              <div className="flex gap-2">
+                  <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg font-bold text-sm flex-1">{editingGuruId ? 'Simpan' : 'Tambah'}</button>
+                  {editingGuruId && <button type="button" onClick={handleCancelEditGuru} className="bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm">Batal</button>}
+              </div>
+            </form>
+
+            <div className="overflow-x-auto border border-slate-100 rounded-xl max-h-64 overflow-y-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-slate-700 font-bold sticky top-0 shadow-sm">
+                  <tr><th className="px-4 py-3">Nama Lengkap</th><th className="px-4 py-3">Username</th><th className="px-4 py-3 text-right">Aksi</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {appUsers.filter(u => u.role === 'guru').map(u => (
+                    <tr key={u.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 font-semibold text-slate-800">{u.nama_lengkap}</td>
+                      <td className="px-4 py-3">{u.username}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => handleEditGuruClick(u)} className="text-blue-500 hover:text-blue-700 font-bold text-xs bg-blue-50 px-2 py-1 rounded border border-blue-100 mr-2">Edit</button>
+                        <button onClick={() => handleDeleteAppUser(u.id, u.nama_lengkap)} className="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-100">Hapus</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {appUsers.filter(u => u.role === 'guru').length === 0 && (
+                    <tr><td colSpan="3" className="px-4 py-6 text-center text-slate-500">Belum ada akun guru.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+        </div>
+
+        {/* MANAJEMEN AKUN OSIS */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 lg:col-span-2 mt-6">
+            <h2 className="font-bold text-slate-800 mb-3 border-b pb-2">Manajemen Akun OSIS</h2>
+            <form onSubmit={handleSaveOsis} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <input type="text" placeholder="Nama Lengkap" value={osisName} onChange={e=>setOsisName(e.target.value)} className="border rounded-lg p-2 text-sm outline-none" required/>
+              <input type="text" placeholder="Username (login)" value={osisUsername} onChange={e=>setOsisUsername(e.target.value)} className="border rounded-lg p-2 text-sm outline-none" required/>
+              <input type="password" placeholder={editingOsisId ? "Password Baru (opsional)" : "Password"} value={osisPassword} onChange={e=>setOsisPassword(e.target.value)} className="border rounded-lg p-2 text-sm outline-none" required={!editingOsisId}/>
+              <div className="flex gap-2">
+                  <button type="submit" className="bg-orange-600 text-white px-4 py-2 rounded-lg font-bold text-sm flex-1">{editingOsisId ? 'Simpan' : 'Tambah'}</button>
+                  {editingOsisId && <button type="button" onClick={handleCancelEditOsis} className="bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm">Batal</button>}
+              </div>
+            </form>
+
+            <div className="overflow-x-auto border border-slate-100 rounded-xl max-h-64 overflow-y-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-slate-700 font-bold sticky top-0 shadow-sm">
+                  <tr><th className="px-4 py-3">Nama Lengkap</th><th className="px-4 py-3">Username</th><th className="px-4 py-3 text-right">Aksi</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {appUsers.filter(u => u.role === 'osis').map(u => (
+                    <tr key={u.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 font-semibold text-slate-800">{u.nama_lengkap}</td>
+                      <td className="px-4 py-3">{u.username}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => handleEditOsisClick(u)} className="text-blue-500 hover:text-blue-700 font-bold text-xs bg-blue-50 px-2 py-1 rounded border border-blue-100 mr-2">Edit</button>
+                        <button onClick={() => handleDeleteAppUser(u.id, u.nama_lengkap)} className="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-100">Hapus</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {appUsers.filter(u => u.role === 'osis').length === 0 && (
+                    <tr><td colSpan="3" className="px-4 py-6 text-center text-slate-500">Belum ada akun OSIS.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+        </div>
+
+        {/* PINDAH / NAIK KELAS */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+            <h2 className="font-bold text-slate-800 mb-1 border-b pb-2">Naik / Pindah Kelas</h2>
+            <p className="text-[10px] text-slate-500 mb-3">Pindahkan siswa ke kelas baru atau naik tingkat.</p>
+            
+            <div className="grid grid-cols-2 gap-2 mb-3">
+                <div>
+                    <label className="text-xs font-semibold text-slate-600">Dari Kelas:</label>
+                    <select 
+                        className="w-full border rounded-lg p-2 text-sm outline-none"
+                        value={selectedClassFrom}
+                        onChange={(e) => handleFetchStudentsForTransfer(e.target.value)}
+                    >
+                        <option value="">-- Pilih --</option>
+                        {classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="text-xs font-semibold text-slate-600">Ke Kelas (Tujuan):</label>
+                    <select 
+                        className="w-full border rounded-lg p-2 text-sm outline-none"
+                        value={selectedClassTo}
+                        onChange={(e) => setSelectedClassTo(e.target.value)}
+                    >
+                        <option value="">-- Pilih --</option>
+                        {classes.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    </select>
+                </div>
+            </div>
+
+            {selectedClassFrom && (
+                <div className="border border-slate-200 rounded-lg p-2 bg-slate-50">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-semibold">Pilih Siswa ({selectedStudents.length}/{studentsInClass.length}):</span>
+                        <button 
+                            className="text-[10px] text-primary-600 font-bold"
+                            onClick={() => setSelectedStudents(selectedStudents.length === studentsInClass.length ? [] : studentsInClass.map(s => s.id))}
+                        >
+                            {selectedStudents.length === studentsInClass.length ? 'Deselect All' : 'Select All'}
+                        </button>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto space-y-1">
+                        {studentsInClass.map(s => (
+                            <label key={s.id} className="flex items-center gap-2 bg-white p-2 rounded border border-slate-100 cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    checked={selectedStudents.includes(s.id)}
+                                    onChange={() => toggleStudentSelection(s.id)}
+                                    className="accent-primary-600"
+                                />
+                                <span className="text-xs font-semibold text-slate-700">{s.name}</span>
+                            </label>
+                        ))}
+                    </div>
+                    <button 
+                        onClick={handleTransfer}
+                        className="w-full mt-3 bg-primary-600 text-white font-bold py-2 rounded-lg text-sm"
+                    >
+                        Pindahkan Siswa
+                    </button>
+                </div>
+            )}
+        </div>
+
+        {/* LULUSKAN KELAS XII */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 mt-6">
+            <h2 className="font-bold text-slate-800 mb-1 border-b pb-2">Luluskan Kelas XII</h2>
+            <p className="text-[10px] text-slate-500 mb-3">Tindakan ini akan memindahkan semua siswa kelas XII ke status ALUMNI beserta tahun kelulusannya.</p>
+            <button 
+                onClick={handleGraduate}
+                className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 rounded-lg text-sm transition-colors"
+            >
+                Proses Kelulusan
+            </button>
+        </div>
+
+        {/* MANAJEMEN ALUMNI (JUNI) */}
+        <div className="bg-orange-50 p-4 rounded-xl shadow-sm border border-orange-200 mt-6">
+            <h2 className="font-bold text-orange-800 mb-1 border-b border-orange-200 pb-2">Manajemen Alumni & Beban Database</h2>
+            <p className="text-[10px] text-orange-600 mb-4">Gunakan fitur di bawah untuk mengelola data alumni. Unduh Excel untuk mencadangkan rekam jejak mereka, lalu Bersihkan Rekam Jejak (Sangat disarankan tiap bulan Juni) untuk menghemat kapasitas database dari beban foto. Biodata tetap aman.</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+                <button 
+                    onClick={handleDownloadAlumni}
+                    className="flex-1 bg-white hover:bg-slate-50 text-orange-700 border border-orange-300 font-bold py-2 rounded-lg text-sm transition-colors shadow-sm"
+                >
+                    Unduh CSV (Excel) Alumni
+                </button>
+                <button 
+                    onClick={handleCleanAlumni}
+                    disabled={cleaning}
+                    className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-lg text-sm transition-colors shadow-sm disabled:opacity-50"
+                >
+                    {cleaning ? 'Membersihkan...' : 'Hapus Rekam Jejak & Foto'}
                 </button>
             </div>
         </div>
@@ -634,13 +805,13 @@ export default function MasterData() {
                 type="file" 
                 accept=".csv" 
                 onChange={e => setCsvFile(e.target.files[0])} 
-                className="text-sm flex-1 border bg-white rounded p-2"
+                className="text-sm w-full md:flex-1 border bg-white rounded p-2 overflow-hidden"
                 required
               />
               <button 
                 type="submit" 
                 disabled={isImporting}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm min-w-[120px] shadow-sm disabled:opacity-50"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm min-w-[120px] w-full md:w-auto shadow-sm disabled:opacity-50"
               >
                 {isImporting ? 'Mengimpor...' : 'Mulai Import'}
               </button>
