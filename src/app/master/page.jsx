@@ -800,18 +800,18 @@ export default function MasterData() {
               Pastikan Anda sudah mengunduh template CSV dan mengisi datanya dengan benar.<br/>
               <a href="/Template_Siswa_SIGMA7.csv" className="text-blue-600 font-bold hover:underline" download>Unduh Template CSV</a>
             </p>
-            <form onSubmit={handleImportCsv} className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-blue-50 p-4 rounded-xl border border-blue-100">
+            <form onSubmit={handleImportCsv} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-blue-50 p-4 rounded-xl border border-blue-100 w-full">
               <input 
                 type="file" 
                 accept=".csv" 
                 onChange={e => setCsvFile(e.target.files[0])} 
-                className="text-sm w-full md:flex-1 border bg-white rounded p-2 overflow-hidden"
+                className="text-sm flex-1 w-full border bg-white rounded p-2"
                 required
               />
               <button 
                 type="submit" 
                 disabled={isImporting}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm min-w-[120px] w-full md:w-auto shadow-sm disabled:opacity-50"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold text-sm w-full sm:w-auto flex-shrink-0 shadow-sm disabled:opacity-50"
               >
                 {isImporting ? 'Mengimpor...' : 'Mulai Import'}
               </button>
