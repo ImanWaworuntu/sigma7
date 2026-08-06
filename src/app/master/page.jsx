@@ -7,7 +7,7 @@ import {
   getRules, addRule, deleteRule, 
   getClasses, addClass, deleteClass, 
   getStudents, moveStudents, graduateClass12, cleanAlumniRecords,
-  getAppUsers, addAppUser, deleteAppUser
+  getAppUsers, addAppUser, deleteAppUser, updateAppUser
 } from '@/lib/dataService';
 
 import { toast, Toaster } from 'react-hot-toast';
@@ -35,11 +35,18 @@ export default function MasterData() {
   const [ruleCategory, setRuleCategory] = useState('Keterlambatan');
 
   // App Users State
+  // App Users State
   const [appUsers, setAppUsers] = useState([]);
-  const [newUserName, setNewUserName] = useState('');
-  const [newUserUsername, setNewUserUsername] = useState('');
-  const [newUserPassword, setNewUserPassword] = useState('');
-  const [newUserRole, setNewUserRole] = useState('guru');
+  
+  const [editingGuruId, setEditingGuruId] = useState(null);
+  const [guruName, setGuruName] = useState('');
+  const [guruUsername, setGuruUsername] = useState('');
+  const [guruPassword, setGuruPassword] = useState('');
+
+  const [editingOsisId, setEditingOsisId] = useState(null);
+  const [osisName, setOsisName] = useState('');
+  const [osisUsername, setOsisUsername] = useState('');
+  const [osisPassword, setOsisPassword] = useState('');
 
 
   useEffect(() => {
@@ -121,25 +128,54 @@ export default function MasterData() {
   };
 
   // --- APP USERS ---
-  const handleAddAppUser = async (e) => {
+  const handleSaveGuru = async (e) => {
     e.preventDefault();
-    if (!newUserName || !newUserUsername || !newUserPassword) return;
+    if (!guruName || !guruUsername || (!guruPassword && !editingGuruId)) return;
     try {
-      await addAppUser({
-        nama_lengkap: newUserName,
-        username: newUserUsername,
-        password: newUserPassword,
-        role: newUserRole
-      });
-      toast.success('User berhasil ditambahkan');
-      setNewUserName('');
-      setNewUserUsername('');
-      setNewUserPassword('');
+      const data = { nama_lengkap: guruName, username: guruUsername, role: 'guru' };
+      if (guruPassword) data.password = guruPassword;
+      if (editingGuruId) {
+        await updateAppUser(editingGuruId, data);
+        toast.success('Akun Guru berhasil diperbarui');
+      } else {
+        await addAppUser(data);
+        toast.success('Akun Guru berhasil ditambahkan');
+      }
+      setGuruName(''); setGuruUsername(''); setGuruPassword(''); setEditingGuruId(null);
       const usersList = await getAppUsers(); setAppUsers(usersList);
-    } catch (e) {
-      console.error(e);
-      toast.error('Gagal tambah user (username mungkin sudah ada)');
-    }
+    } catch (e) { toast.error('Gagal menyimpan (username mungkin sudah ada)'); }
+  };
+
+  const handleEditGuruClick = (u) => {
+    setEditingGuruId(u.id); setGuruName(u.nama_lengkap); setGuruUsername(u.username); setGuruPassword('');
+  };
+  const handleCancelEditGuru = () => {
+    setEditingGuruId(null); setGuruName(''); setGuruUsername(''); setGuruPassword('');
+  };
+
+  const handleSaveOsis = async (e) => {
+    e.preventDefault();
+    if (!osisName || !osisUsername || (!osisPassword && !editingOsisId)) return;
+    try {
+      const data = { nama_lengkap: osisName, username: osisUsername, role: 'osis' };
+      if (osisPassword) data.password = osisPassword;
+      if (editingOsisId) {
+        await updateAppUser(editingOsisId, data);
+        toast.success('Akun OSIS berhasil diperbarui');
+      } else {
+        await addAppUser(data);
+        toast.success('Akun OSIS berhasil ditambahkan');
+      }
+      setOsisName(''); setOsisUsername(''); setOsisPassword(''); setEditingOsisId(null);
+      const usersList = await getAppUsers(); setAppUsers(usersList);
+    } catch (e) { toast.error('Gagal menyimpan (username mungkin sudah ada)'); }
+  };
+
+  const handleEditOsisClick = (u) => {
+    setEditingOsisId(u.id); setOsisName(u.nama_lengkap); setOsisUsername(u.username); setOsisPassword('');
+  };
+  const handleCancelEditOsis = () => {
+    setEditingOsisId(null); setOsisName(''); setOsisUsername(''); setOsisPassword('');
   };
 
   const handleDeleteAppUser = async (id, nama) => {
@@ -365,49 +401,74 @@ export default function MasterData() {
             </div>
         </div>
 
-        {/* MANAJEMEN AKUN */}
+        {/* MANAJEMEN AKUN GURU */}
         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 lg:col-span-2">
-            <h2 className="font-bold text-slate-800 mb-3 border-b pb-2">Manajemen Akun (Guru & OSIS)</h2>
-            <form onSubmit={handleAddAppUser} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
-              <input type="text" placeholder="Nama Lengkap" value={newUserName} onChange={e=>setNewUserName(e.target.value)} className="border rounded-lg p-2 text-sm outline-none lg:col-span-1" required/>
-              <input type="text" placeholder="Username (login)" value={newUserUsername} onChange={e=>setNewUserUsername(e.target.value)} className="border rounded-lg p-2 text-sm outline-none lg:col-span-1" required/>
-              <input type="password" placeholder="Password" value={newUserPassword} onChange={e=>setNewUserPassword(e.target.value)} className="border rounded-lg p-2 text-sm outline-none lg:col-span-1" required/>
-              <select value={newUserRole} onChange={e=>setNewUserRole(e.target.value)} className="border rounded-lg p-2 text-sm outline-none lg:col-span-1">
-                <option value="guru">Guru</option>
-                <option value="osis">OSIS</option>
-              </select>
-              <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg font-bold text-sm lg:col-span-1">Tambah User</button>
+            <h2 className="font-bold text-slate-800 mb-3 border-b pb-2">Manajemen Akun Guru</h2>
+            <form onSubmit={handleSaveGuru} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <input type="text" placeholder="Nama Lengkap" value={guruName} onChange={e=>setGuruName(e.target.value)} className="border rounded-lg p-2 text-sm outline-none" required/>
+              <input type="text" placeholder="Username (login)" value={guruUsername} onChange={e=>setGuruUsername(e.target.value)} className="border rounded-lg p-2 text-sm outline-none" required/>
+              <input type="password" placeholder={editingGuruId ? "Password Baru (opsional)" : "Password"} value={guruPassword} onChange={e=>setGuruPassword(e.target.value)} className="border rounded-lg p-2 text-sm outline-none" required={!editingGuruId}/>
+              <div className="flex gap-2">
+                  <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg font-bold text-sm flex-1">{editingGuruId ? 'Simpan' : 'Tambah'}</button>
+                  {editingGuruId && <button type="button" onClick={handleCancelEditGuru} className="bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm">Batal</button>}
+              </div>
             </form>
 
             <div className="overflow-x-auto border border-slate-100 rounded-xl max-h-64 overflow-y-auto">
               <table className="w-full text-left text-sm text-slate-600">
                 <thead className="bg-slate-50 text-slate-700 font-bold sticky top-0 shadow-sm">
-                  <tr>
-                    <th className="px-4 py-3">Nama Lengkap</th>
-                    <th className="px-4 py-3">Username</th>
-                    <th className="px-4 py-3">Role</th>
-                    <th className="px-4 py-3 text-right">Aksi</th>
-                  </tr>
+                  <tr><th className="px-4 py-3">Nama Lengkap</th><th className="px-4 py-3">Username</th><th className="px-4 py-3 text-right">Aksi</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {appUsers.map(u => (
+                  {appUsers.filter(u => u.role === 'guru').map(u => (
                     <tr key={u.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3 font-semibold text-slate-800">{u.nama_lengkap}</td>
                       <td className="px-4 py-3">{u.username}</td>
-                      <td className="px-4 py-3 capitalize">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${u.role === 'guru' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
-                          {u.role}
-                        </span>
-                      </td>
                       <td className="px-4 py-3 text-right">
+                        <button onClick={() => handleEditGuruClick(u)} className="text-blue-500 hover:text-blue-700 font-bold text-xs bg-blue-50 px-2 py-1 rounded border border-blue-100 mr-2">Edit</button>
                         <button onClick={() => handleDeleteAppUser(u.id, u.nama_lengkap)} className="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-100">Hapus</button>
                       </td>
                     </tr>
                   ))}
-                  {appUsers.length === 0 && (
-                    <tr>
-                      <td colSpan="4" className="px-4 py-6 text-center text-slate-500">Belum ada akun guru/osis terdaftar.</td>
+                  {appUsers.filter(u => u.role === 'guru').length === 0 && (
+                    <tr><td colSpan="3" className="px-4 py-6 text-center text-slate-500">Belum ada akun guru.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+        </div>
+
+        {/* MANAJEMEN AKUN OSIS */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 lg:col-span-2 mt-6">
+            <h2 className="font-bold text-slate-800 mb-3 border-b pb-2">Manajemen Akun OSIS</h2>
+            <form onSubmit={handleSaveOsis} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <input type="text" placeholder="Nama Lengkap" value={osisName} onChange={e=>setOsisName(e.target.value)} className="border rounded-lg p-2 text-sm outline-none" required/>
+              <input type="text" placeholder="Username (login)" value={osisUsername} onChange={e=>setOsisUsername(e.target.value)} className="border rounded-lg p-2 text-sm outline-none" required/>
+              <input type="password" placeholder={editingOsisId ? "Password Baru (opsional)" : "Password"} value={osisPassword} onChange={e=>setOsisPassword(e.target.value)} className="border rounded-lg p-2 text-sm outline-none" required={!editingOsisId}/>
+              <div className="flex gap-2">
+                  <button type="submit" className="bg-orange-600 text-white px-4 py-2 rounded-lg font-bold text-sm flex-1">{editingOsisId ? 'Simpan' : 'Tambah'}</button>
+                  {editingOsisId && <button type="button" onClick={handleCancelEditOsis} className="bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm">Batal</button>}
+              </div>
+            </form>
+
+            <div className="overflow-x-auto border border-slate-100 rounded-xl max-h-64 overflow-y-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-slate-700 font-bold sticky top-0 shadow-sm">
+                  <tr><th className="px-4 py-3">Nama Lengkap</th><th className="px-4 py-3">Username</th><th className="px-4 py-3 text-right">Aksi</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {appUsers.filter(u => u.role === 'osis').map(u => (
+                    <tr key={u.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 font-semibold text-slate-800">{u.nama_lengkap}</td>
+                      <td className="px-4 py-3">{u.username}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => handleEditOsisClick(u)} className="text-blue-500 hover:text-blue-700 font-bold text-xs bg-blue-50 px-2 py-1 rounded border border-blue-100 mr-2">Edit</button>
+                        <button onClick={() => handleDeleteAppUser(u.id, u.nama_lengkap)} className="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-100">Hapus</button>
+                      </td>
                     </tr>
+                  ))}
+                  {appUsers.filter(u => u.role === 'osis').length === 0 && (
+                    <tr><td colSpan="3" className="px-4 py-6 text-center text-slate-500">Belum ada akun OSIS.</td></tr>
                   )}
                 </tbody>
               </table>

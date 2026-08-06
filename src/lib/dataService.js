@@ -484,3 +484,9 @@ export const deleteAppUser = async (id) => {
   if (error) throw error;
   return true;
 };
+
+export const updateAppUser = async (id, userData) => {
+  const { data, error } = await supabase.from('users').update(userData).eq('id', id).select();
+  if (error) throw error;
+  return data;
+};

@@ -252,9 +252,11 @@ function SiswaProfileContent() {
         {bannerText && (
           <div className={`rounded-xl p-4 mb-6 border font-bold text-sm text-center shadow-sm print:hidden ${bannerColor} flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-2`}>
             <span className="flex items-center gap-2">⚠️ {bannerText}</span>
-            <button onClick={handleMarkSp} className="bg-white/90 text-slate-800 px-4 py-2 rounded-lg shadow-sm hover:bg-white active:scale-95 transition-all text-xs whitespace-nowrap">
-              Tandai SP {pendingSpLevel} Diberikan
-            </button>
+            {user?.role === 'admin' && (
+              <button onClick={handleMarkSp} className="bg-white/90 text-slate-800 px-4 py-2 rounded-lg shadow-sm hover:bg-white active:scale-95 transition-all text-xs whitespace-nowrap">
+                Tandai SP {pendingSpLevel} Diberikan
+              </button>
+            )}
           </div>
         )}
 
