@@ -617,7 +617,7 @@ export default function MasterData() {
                     className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-lg text-sm transition-colors shadow-sm disabled:opacity-50"
                 >
                     {cleaning ? 'Membersihkan...' : 'Hapus Rekam Jejak & Foto'}
-              ))}
+                </button>
             </div>
         </div>
 
