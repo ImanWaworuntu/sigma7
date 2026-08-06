@@ -211,7 +211,7 @@ export const cleanAlumniRecords = async () => {
 
 // --- RECORDS (Pelanggaran & Penghargaan) ---
 export const addRecord = async (recordData) => {
-  const { photoBase64, studentId, studentName, className, type, action, description, points, notes, date } = recordData;
+  const { photoBase64, studentId, studentName, className, type, action, description, points, notes, date, reportedBy } = recordData;
   const actualAction = action || description || "Tanpa Keterangan";
   let photo_url = null;
 
@@ -249,7 +249,8 @@ export const addRecord = async (recordData) => {
     points,
     notes: notes || "",
     date,
-    photo_url
+    photo_url,
+    reported_by: reportedBy
   }]).select();
   
   if (error) throw error;
@@ -278,21 +279,39 @@ export const getTopRecords = async (type = 'pelanggaran', limitCount = 5) => {
 };
 
 export const getRecords = async (filters = {}) => {
-  let query = supabase.from('records').select('*, students(name, class_id, classes(name))');
-  
-  if (filters.studentId) {
-    query = query.eq('student_id', filters.studentId);
+  let allData = [];
+  let from = 0;
+  const limit = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    let query = supabase.from('records').select('*, students(name, class_id, classes(name))');
+    
+    if (filters.studentId) {
+      query = query.eq('student_id', filters.studentId);
+    }
+    if (filters.type && filters.type !== 'all') {
+      query = query.eq('type', filters.type);
+    }
+    
+    if (filters.startDate && filters.endDate) {
+      query = query.gte('date', filters.startDate).lte('date', filters.endDate);
+    }
+    
+    query = query.order('created_at', { ascending: false }).range(from, from + limit - 1);
+    
+    const { data, error } = await query;
+    if (error) throw error;
+    
+    allData = [...allData, ...data];
+    if (data.length < limit) {
+      hasMore = false;
+    } else {
+      from += limit;
+    }
   }
-  if (filters.type && filters.type !== 'all') {
-    query = query.eq('type', filters.type);
-  }
   
-  query = query.order('created_at', { ascending: false });
-  
-  const { data, error } = await query;
-  if (error) throw error;
-  
-  let results = data.map(d => ({
+  let results = allData.map(d => ({
     id: d.id,
     studentId: d.student_id,
     studentName: d.students?.name,
@@ -306,7 +325,7 @@ export const getRecords = async (filters = {}) => {
     date: d.date,
     photoUrl: d.photo_url,
     createdAt: d.created_at,
-    reportedBy: '-'
+    reportedBy: d.reported_by || '-'
   }));
 
   if (filters.classId && filters.classId !== 'all') {
