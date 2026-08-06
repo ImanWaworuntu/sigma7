@@ -7,7 +7,8 @@ import {
   getRules, addRule, deleteRule, 
   getClasses, addClass, deleteClass, 
   getStudents, moveStudents, graduateClass12, cleanAlumniRecords,
-  getAppUsers, addAppUser, deleteAppUser, updateAppUser
+  getAppUsers, addAppUser, deleteAppUser, updateAppUser,
+  checkClassXEmpty, resetAllStudentData, importStudentsFromCSV
 } from '@/lib/dataService';
 
 import { toast, Toaster } from 'react-hot-toast';
@@ -47,6 +48,11 @@ export default function MasterData() {
   const [osisName, setOsisName] = useState('');
   const [osisUsername, setOsisUsername] = useState('');
   const [osisPassword, setOsisPassword] = useState('');
+
+  // Import / Reset State
+  const [csvFile, setCsvFile] = useState(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
 
   useEffect(() => {
@@ -246,6 +252,49 @@ export default function MasterData() {
         toast.error("Gagal menghapus riwayat alumni");
     }
     setCleaning(false);
+  };
+
+  const handleImportCsv = async (e) => {
+    e.preventDefault();
+    if (!csvFile) return toast.error('Pilih file CSV terlebih dahulu');
+    
+    // Check if Class X is empty
+    const isXEmpty = await checkClassXEmpty();
+    if (!isXEmpty) {
+      if (!confirm("PERINGATAN! Masih ada siswa di Kelas X. Apakah Anda yakin ini bukan data tumpang tindih? Pastikan siswa Kelas X sudah dinaikkan ke XI sebelum mengimpor siswa baru.")) {
+        return;
+      }
+    }
+
+    setIsImporting(true);
+    try {
+      const text = await csvFile.text();
+      const count = await importStudentsFromCSV(text);
+      toast.success(`${count} data siswa berhasil diimpor!`);
+      setCsvFile(null);
+      fetchInitData();
+    } catch (err) {
+      toast.error(err.message || 'Gagal mengimpor CSV');
+    }
+    setIsImporting(false);
+  };
+
+  const handleResetData = async () => {
+    if (!confirm("BAHAYA! Ini akan menghapus SEMUA data siswa, pelanggaran, dan absensi! Struktur kelas dan akun Anda tetap aman. Lanjutkan?")) return;
+    const prompt = window.prompt("Ketik 'HAPUS' untuk mengonfirmasi penghapusan seluruh data siswa:");
+    if (prompt !== 'HAPUS') {
+      toast.error("Konfirmasi gagal dibatalkan.");
+      return;
+    }
+    setIsResetting(true);
+    try {
+      await resetAllStudentData();
+      toast.success("Semua data siswa & riwayat berhasil dihapus (Reset)!");
+      fetchInitData();
+    } catch (e) {
+      toast.error("Gagal mereset data");
+    }
+    setIsResetting(false);
   };
 
   const handleDownloadAlumni = async () => {
@@ -572,8 +621,47 @@ export default function MasterData() {
             </div>
         </div>
 
+        {/* IMPORT DATA SISWA (CSV) */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 lg:col-span-2 mt-6">
+            <h2 className="font-bold text-slate-800 mb-3 border-b pb-2">Import Data Siswa (CSV)</h2>
+            <p className="text-xs text-slate-500 mb-4">
+              Gunakan fitur ini untuk memasukkan data siswa ajaran baru (contoh: 360 siswa Kelas X). 
+              Pastikan Anda sudah mengunduh template CSV dan mengisi datanya dengan benar.<br/>
+              <a href="/Template_Siswa_SIGMA7.csv" className="text-blue-600 font-bold hover:underline" download>Unduh Template CSV</a>
+            </p>
+            <form onSubmit={handleImportCsv} className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-blue-50 p-4 rounded-xl border border-blue-100">
+              <input 
+                type="file" 
+                accept=".csv" 
+                onChange={e => setCsvFile(e.target.files[0])} 
+                className="text-sm flex-1 border bg-white rounded p-2"
+                required
+              />
+              <button 
+                type="submit" 
+                disabled={isImporting}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm min-w-[120px] shadow-sm disabled:opacity-50"
+              >
+                {isImporting ? 'Mengimpor...' : 'Mulai Import'}
+              </button>
+            </form>
+        </div>
 
-
+        {/* DANGER ZONE (RESET DATA) */}
+        <div className="bg-red-50 p-4 rounded-xl shadow-sm border border-red-200 lg:col-span-2 mt-6">
+            <h2 className="font-bold text-red-800 mb-2 border-b border-red-200 pb-2 flex items-center gap-2">⚠️ Danger Zone (Reset Data Dummy)</h2>
+            <p className="text-xs text-red-600 mb-4 font-medium">
+              Menghapus secara permanen SELURUH data Siswa, Riwayat Pelanggaran, dan Absensi dari database! 
+              (Struktur Kelas, Master Aturan, dan Akun Guru/OSIS tidak akan dihapus).
+            </p>
+            <button 
+              onClick={handleResetData} 
+              disabled={isResetting}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-sm disabled:opacity-50"
+            >
+              {isResetting ? 'Mereset Data...' : 'Hapus Seluruh Data Siswa & Riwayat'}
+            </button>
+        </div>
       </div>
     </main>
   );

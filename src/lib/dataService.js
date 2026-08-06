@@ -178,14 +178,120 @@ export const deleteStudent = async (studentId) => {
 
 export const moveStudents = async (studentIds, newClassName) => {
   const { data: cls } = await supabase.from('classes').select('id').eq('name', newClassName).single();
-  if (!cls) throw new Error("Kelas tidak ditemukan");
-  
+  let actualClassId = null;
+  if (cls) {
+    actualClassId = cls.id;
+  } else {
+    const { data: newCls } = await supabase.from('classes').insert([{ name: newClassName }]).select();
+    if (newCls && newCls.length > 0) actualClassId = newCls[0].id;
+  }
+
   const { error } = await supabase
     .from('students')
-    .update({ class_id: cls.id })
+    .update({ class_id: actualClassId })
     .in('id', studentIds);
   if (error) throw error;
   return true;
+};
+
+export const checkClassXEmpty = async () => {
+  const { data, error } = await supabase.from('students').select('id, classes!inner(name)');
+  if (error) return false;
+  const hasClassX = data.some(s => s.classes?.name?.toUpperCase().startsWith('X.'));
+  return !hasClassX;
+};
+
+export const resetAllStudentData = async () => {
+  await supabase.from('attendance').delete().neq('id', 0);
+  await supabase.from('records').delete().neq('id', 0);
+  const { error } = await supabase.from('students').delete().neq('id', 0);
+  if (error) throw error;
+  return true;
+};
+
+export const importStudentsFromCSV = async (csvText) => {
+  const rows = csvText.split('\n').filter(row => row.trim().length > 0);
+  if (rows.length < 2) throw new Error("CSV kosong atau tidak ada data");
+  
+  const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
+  
+  const nameIdx = headers.findIndex(h => h.includes('nama'));
+  const classIdx = headers.findIndex(h => h === 'kelas');
+  const nisnIdx = headers.findIndex(h => h === 'nisn');
+  const nisIdx = headers.findIndex(h => h === 'nis');
+  const genderIdx = headers.findIndex(h => h.includes('kelamin') || h === 'jk');
+  const waliIdx = headers.findIndex(h => h.includes('wali'));
+
+  if (nameIdx === -1 || classIdx === -1) {
+    throw new Error("Format CSV salah. Harus ada kolom 'Nama Murid' dan 'Kelas'.");
+  }
+
+  const { data: existingClasses } = await supabase.from('classes').select('id, name');
+  const classMap = {};
+  if (existingClasses) {
+      existingClasses.forEach(c => classMap[c.name.toUpperCase()] = c.id);
+  }
+
+  const studentsToInsert = [];
+  const newClassesToCreate = new Set();
+
+  for (let i = 1; i < rows.length; i++) {
+    const cols = rows[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+    
+    const name = cols[nameIdx];
+    const className = cols[classIdx];
+    
+    if (!name || !className) continue;
+
+    const nis = nisIdx > -1 ? cols[nisIdx] : '';
+    const nisn = nisnIdx > -1 ? cols[nisnIdx] : '';
+    let gender = genderIdx > -1 ? cols[genderIdx] : '';
+    
+    const gUpper = gender.toUpperCase();
+    if (gUpper === 'L' || gUpper === 'LAKI-LAKI' || gUpper === 'PRIA' || gUpper.startsWith('P')) {
+        gender = 'Pria';
+        if (gUpper.startsWith('PE') || gUpper === 'PEREMPUAN') gender = 'Wanita';
+    }
+    if (gUpper === 'W' || gUpper === 'WANITA' || gUpper === 'P' || gUpper === 'PEREMPUAN') gender = 'Wanita';
+
+    const wali = waliIdx > -1 ? cols[waliIdx] : '';
+
+    if (!classMap[className.toUpperCase()]) {
+      newClassesToCreate.add(className);
+    }
+
+    studentsToInsert.push({
+      name,
+      tempClassName: className,
+      nis,
+      nisn,
+      gender,
+      homeroom_teacher: wali,
+      poin_pelanggaran: 0,
+      poin_penghargaan: 0,
+      sp_issued_level: 0
+    });
+  }
+
+  for (const newClass of newClassesToCreate) {
+    const { data: insertedClass } = await supabase.from('classes').insert([{ name: newClass }]).select();
+    if (insertedClass && insertedClass.length > 0) {
+      classMap[newClass.toUpperCase()] = insertedClass[0].id;
+    }
+  }
+
+  const finalInsertData = studentsToInsert.map(s => {
+    const class_id = classMap[s.tempClassName.toUpperCase()];
+    delete s.tempClassName;
+    return { ...s, class_id };
+  });
+
+  if (finalInsertData.length === 0) return 0;
+
+  const { error } = await supabase.from('students').insert(finalInsertData);
+  if (error) throw error;
+  
+  return finalInsertData.length;
 };
 
 export const graduateClass12 = async () => {
