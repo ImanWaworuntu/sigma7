@@ -44,8 +44,11 @@ export const deleteRule = async (ruleId) => {
 // --- CLASSES ---
 export const getClasses = async () => {
   if (cachedClasses) return cachedClasses;
-  const { data, error } = await supabase.from('classes').select('id, name').order('name', { ascending: true });
+  const { data, error } = await supabase.from('classes').select('id, name');
   if (error) throw error;
+  
+  data.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+  
   cachedClasses = data;
   return data;
 };
