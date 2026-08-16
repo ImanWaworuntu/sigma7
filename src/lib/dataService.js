@@ -214,7 +214,13 @@ export const importStudentsFromCSV = async (csvText) => {
   if (rows.length < 2) throw new Error("CSV kosong atau tidak ada data");
   
   const separator = rows[0].includes(';') ? ';' : ',';
-  const headers = rows[0].split(separator).map(h => h.trim().toLowerCase());
+  
+  const parseCSVLine = (line) => {
+    const regex = new RegExp(`${separator}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
+    return line.split(regex).map(c => c.trim().replace(/^"|"$/g, ''));
+  };
+
+  const headers = parseCSVLine(rows[0]).map(h => h.toLowerCase());
   
   const nameIdx = headers.findIndex(h => h.includes('nama'));
   const classIdx = headers.findIndex(h => h === 'kelas');
@@ -222,6 +228,7 @@ export const importStudentsFromCSV = async (csvText) => {
   const nisIdx = headers.findIndex(h => h === 'nis');
   const genderIdx = headers.findIndex(h => h.includes('kelamin') || h === 'jk');
   const waliIdx = headers.findIndex(h => h.includes('wali'));
+  const agamaIdx = headers.findIndex(h => h === 'agama');
 
   if (nameIdx === -1 || classIdx === -1) {
     throw new Error("Format CSV salah. Harus ada kolom 'Nama Murid' dan 'Kelas'.");
@@ -237,7 +244,7 @@ export const importStudentsFromCSV = async (csvText) => {
   const newClassesToCreate = new Set();
 
   for (let i = 1; i < rows.length; i++) {
-    const cols = rows[i].split(separator).map(c => c.trim().replace(/^"|"$/g, ''));
+    const cols = parseCSVLine(rows[i]);
     
     const name = cols[nameIdx];
     const className = cols[classIdx];
@@ -259,6 +266,15 @@ export const importStudentsFromCSV = async (csvText) => {
 
     const wali = waliIdx > -1 ? cols[waliIdx] : '';
 
+    let agamaRaw = agamaIdx > -1 ? (cols[agamaIdx] || '').trim().toUpperCase() : '';
+    let agama = '';
+    if (agamaRaw === 'I') agama = 'Islam';
+    else if (agamaRaw === 'K') agama = 'Kristen';
+    else if (agamaRaw === 'KK') agama = 'Katholik';
+    else if (agamaRaw === 'H') agama = 'Hindu';
+    else if (agamaRaw === 'B') agama = 'Buddha';
+    else agama = agamaRaw || null;
+
     if (!classMap[className.toUpperCase()]) {
       newClassesToCreate.add(className);
     }
@@ -269,6 +285,7 @@ export const importStudentsFromCSV = async (csvText) => {
       nis,
       nisn,
       gender,
+      agama,
       homeroom_teacher: wali,
       poin_pelanggaran: 0,
       poin_penghargaan: 0,
