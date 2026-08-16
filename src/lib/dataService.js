@@ -202,9 +202,9 @@ export const checkClassXEmpty = async () => {
 };
 
 export const resetAllStudentData = async () => {
-  await supabase.from('attendance').delete().neq('id', 0);
-  await supabase.from('records').delete().neq('id', 0);
-  const { error } = await supabase.from('students').delete().neq('id', 0);
+  await supabase.from('attendance').delete().not('id', 'is', null);
+  await supabase.from('records').delete().not('id', 'is', null);
+  const { error } = await supabase.from('students').delete().not('id', 'is', null);
   if (error) throw error;
   return true;
 };
@@ -213,7 +213,8 @@ export const importStudentsFromCSV = async (csvText) => {
   const rows = csvText.split('\n').filter(row => row.trim().length > 0);
   if (rows.length < 2) throw new Error("CSV kosong atau tidak ada data");
   
-  const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
+  const separator = rows[0].includes(';') ? ';' : ',';
+  const headers = rows[0].split(separator).map(h => h.trim().toLowerCase());
   
   const nameIdx = headers.findIndex(h => h.includes('nama'));
   const classIdx = headers.findIndex(h => h === 'kelas');
@@ -236,7 +237,7 @@ export const importStudentsFromCSV = async (csvText) => {
   const newClassesToCreate = new Set();
 
   for (let i = 1; i < rows.length; i++) {
-    const cols = rows[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+    const cols = rows[i].split(separator).map(c => c.trim().replace(/^"|"$/g, ''));
     
     const name = cols[nameIdx];
     const className = cols[classIdx];
@@ -245,7 +246,7 @@ export const importStudentsFromCSV = async (csvText) => {
 
     const nis = nisIdx > -1 ? cols[nisIdx] : '';
     const nisn = nisnIdx > -1 ? cols[nisnIdx] : '';
-    let gender = genderIdx > -1 ? cols[genderIdx] : '';
+    let gender = genderIdx > -1 ? (cols[genderIdx] || '') : '';
     
     const gUpper = gender.toUpperCase();
     if (gUpper === 'L' || gUpper === 'LAKI-LAKI' || gUpper === 'PRIA' || gUpper.startsWith('P')) {
