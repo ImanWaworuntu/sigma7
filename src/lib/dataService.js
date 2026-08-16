@@ -331,8 +331,12 @@ export const importStudentsFromCSV = async (csvText) => {
 
   if (finalInsertData.length === 0) return 0;
 
-  const { error } = await supabase.from('students').insert(finalInsertData);
-  if (error) throw error;
+  const BATCH_SIZE = 500;
+  for (let i = 0; i < finalInsertData.length; i += BATCH_SIZE) {
+    const batch = finalInsertData.slice(i, i + BATCH_SIZE);
+    const { error } = await supabase.from('students').insert(batch);
+    if (error) throw error;
+  }
   
   return finalInsertData.length;
 };
