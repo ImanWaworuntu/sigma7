@@ -248,12 +248,14 @@ export const importStudentsFromCSV = async (csvText) => {
     const nisn = nisnIdx > -1 ? cols[nisnIdx] : '';
     let gender = genderIdx > -1 ? (cols[genderIdx] || '') : '';
     
-    const gUpper = gender.toUpperCase();
-    if (gUpper === 'L' || gUpper === 'LAKI-LAKI' || gUpper === 'PRIA' || gUpper.startsWith('P')) {
+    const gUpper = gender.trim().toUpperCase();
+    if (gUpper === 'L') {
         gender = 'Pria';
-        if (gUpper.startsWith('PE') || gUpper === 'PEREMPUAN') gender = 'Wanita';
+    } else if (gUpper === 'P') {
+        gender = 'Wanita';
+    } else {
+        gender = '';
     }
-    if (gUpper === 'W' || gUpper === 'WANITA' || gUpper === 'P' || gUpper === 'PEREMPUAN') gender = 'Wanita';
 
     const wali = waliIdx > -1 ? cols[waliIdx] : '';
 
