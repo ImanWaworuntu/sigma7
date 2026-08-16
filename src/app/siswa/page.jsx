@@ -88,7 +88,10 @@ export default function SiswaPage() {
             <Link href="/dashboard" className="mr-4 text-slate-500 active:scale-95 transition-transform">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </Link>
-            <h1 className="text-lg font-bold text-slate-800">Data Siswa</h1>
+            <div>
+              <h1 className="text-lg font-bold text-slate-800">Data Siswa</h1>
+              {!loading && <p className="text-xs text-slate-500">{filteredStudents.length} siswa {filter === 'Semua' ? 'keseluruhan' : ''}</p>}
+            </div>
           </div>
           <div className="flex gap-2">
             {user?.role === 'admin' && (
@@ -131,7 +134,15 @@ export default function SiswaPage() {
         </div>
         
         {/* Filter chips */}
-        <div className="flex gap-2 mt-4 overflow-x-auto pb-1 no-scrollbar">
+        <div className="flex gap-2 mt-4 overflow-x-auto pb-1 no-scrollbar items-center">
+          <select 
+             value={filter}
+             onChange={(e) => setFilter(e.target.value)}
+             className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold outline-none shrink-0 border appearance-none ${!['Semua', 'Bermasalah', 'Perlu SP', 'Berprestasi', 'Kelas X', 'Kelas XI', 'Kelas XII', 'Alumni'].includes(filter) ? 'bg-primary-600 text-white border-primary-600' : 'bg-white border-slate-200 text-slate-600'}`}
+          >
+             <option value="Semua">-- Pilih Kelas --</option>
+             {classes.filter(c => !c.name.toUpperCase().startsWith('ALUMNI')).map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+          </select>
           {['Semua', 'Bermasalah', 'Perlu SP', 'Berprestasi', 'Kelas X', 'Kelas XI', 'Kelas XII', 'Alumni'].map(f => (
             <button 
               key={f} 
