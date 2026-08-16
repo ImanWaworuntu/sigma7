@@ -74,23 +74,43 @@ export const deleteClass = async (classId) => {
 
 // --- STUDENTS ---
 export const getStudents = async (className = null) => {
-  let query = supabase.from('students').select('id, name, class_id, gender, poin_pelanggaran, poin_penghargaan, sp_issued_level, classes(name)');
-  
+  let actualClassId = null;
   if (className) {
     const { data: cls } = await supabase.from('classes').select('id').eq('name', className).single();
     if (cls) {
-      query = query.eq('class_id', cls.id);
+      actualClassId = cls.id;
     } else {
       return [];
     }
   }
   
-  query = query.order('name', { ascending: true }).limit(10000);
+  let allData = [];
+  let from = 0;
+  const step = 1000;
   
-  const { data, error } = await query;
-  if (error) throw error;
+  while (true) {
+    let query = supabase.from('students').select('id, name, class_id, gender, agama, poin_pelanggaran, poin_penghargaan, sp_issued_level, classes(name)');
+    if (actualClassId) {
+      query = query.eq('class_id', actualClassId);
+    }
+    
+    query = query.order('name', { ascending: true }).range(from, from + step - 1);
+    
+    const { data, error } = await query;
+    if (error) throw error;
+    
+    if (data && data.length > 0) {
+      allData = [...allData, ...data];
+    }
+    
+    if (!data || data.length < step) {
+      break;
+    }
+    
+    from += step;
+  }
   
-  const students = data.map(d => ({
+  const students = allData.map(d => ({
     ...d,
     classId: d.classes?.name || d.class_id, // Map frontend classId to the string name
     poinPelanggaran: d.poin_pelanggaran,
