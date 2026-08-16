@@ -210,17 +210,40 @@ export const resetAllStudentData = async () => {
 };
 
 export const importStudentsFromCSV = async (csvText) => {
-  const rows = csvText.split('\n').filter(row => row.trim().length > 0);
-  if (rows.length < 2) throw new Error("CSV kosong atau tidak ada data");
-  
-  const separator = rows[0].includes(';') ? ';' : ',';
-  
-  const parseCSVLine = (line) => {
-    const regex = new RegExp(`${separator}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
-    return line.split(regex).map(c => c.trim().replace(/^"|"$/g, ''));
+  const parseCSV = (text) => {
+    const firstLineEnd = text.indexOf('\n');
+    const firstLine = firstLineEnd > -1 ? text.substring(0, firstLineEnd) : text;
+    const sep = firstLine.includes(';') ? ';' : ',';
+    
+    const res = [];
+    let line = [];
+    let val = '';
+    let inQ = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      const nc = text[i + 1];
+      if (inQ) {
+        if (c === '"' && nc === '"') { val += '"'; i++; }
+        else if (c === '"') { inQ = false; }
+        else { val += c; }
+      } else {
+        if (c === '"') { inQ = true; }
+        else if (c === sep) { line.push(val.trim()); val = ''; }
+        else if (c === '\n' || (c === '\r' && nc === '\n')) {
+          line.push(val.trim()); res.push(line); line = []; val = '';
+          if (c === '\r') i++;
+        }
+        else if (c !== '\r') { val += c; }
+      }
+    }
+    if (val !== '' || line.length > 0) { line.push(val.trim()); res.push(line); }
+    return res.filter(r => r.join('').trim() !== '');
   };
 
-  const headers = parseCSVLine(rows[0]).map(h => h.toLowerCase());
+  const parsedRows = parseCSV(csvText);
+  if (parsedRows.length < 2) throw new Error("CSV kosong atau tidak ada data");
+  
+  const headers = parsedRows[0].map(h => h.toLowerCase());
   
   const nameIdx = headers.findIndex(h => h.includes('nama'));
   const classIdx = headers.findIndex(h => h === 'kelas');
@@ -243,8 +266,8 @@ export const importStudentsFromCSV = async (csvText) => {
   const studentsToInsert = [];
   const newClassesToCreate = new Set();
 
-  for (let i = 1; i < rows.length; i++) {
-    const cols = parseCSVLine(rows[i]);
+  for (let i = 1; i < parsedRows.length; i++) {
+    const cols = parsedRows[i];
     
     const name = cols[nameIdx];
     const className = cols[classIdx];
