@@ -85,7 +85,7 @@ export const getStudents = async (className = null) => {
     }
   }
   
-  query = query.order('name', { ascending: true });
+  query = query.order('name', { ascending: true }).limit(10000);
   
   const { data, error } = await query;
   if (error) throw error;
