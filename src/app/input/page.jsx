@@ -88,10 +88,22 @@ function InputForm() {
     });
   };
 
+  const isAllInClassSelected = filterKelas && students.filter(s => s.classId === filterKelas).length > 0 && students.filter(s => s.classId === filterKelas).every(s => selectedStudents.some(sel => sel.id === s.id));
+
   const selectAllInClass = () => {
     if (filterKelas) {
       const classStudents = students.filter(s => s.classId === filterKelas);
-      setSelectedStudents(classStudents);
+      if (isAllInClassSelected) {
+        setSelectedStudents(prev => prev.filter(sel => !classStudents.some(cs => cs.id === sel.id)));
+      } else {
+        setSelectedStudents(prev => {
+          const newSelection = [...prev];
+          classStudents.forEach(cs => {
+            if (!newSelection.some(sel => sel.id === cs.id)) newSelection.push(cs);
+          });
+          return newSelection;
+        });
+      }
     }
   };
 
@@ -227,9 +239,9 @@ function InputForm() {
             {filterKelas && (
               <button 
                 onClick={selectAllInClass}
-                className="mb-3 w-full bg-slate-100 text-slate-700 font-bold text-xs py-2 rounded-lg border border-slate-200 active:bg-slate-200 transition-colors"
+                className={`mb-3 w-full font-bold text-xs py-2 rounded-lg border transition-colors ${isAllInClassSelected ? 'bg-red-50 text-red-600 border-red-200 active:bg-red-100' : 'bg-slate-100 text-slate-700 border-slate-200 active:bg-slate-200'}`}
               >
-                Pilih Semua di Kelas {filterKelas}
+                {isAllInClassSelected ? `Batal Pilih Semua di Kelas ${filterKelas}` : `Pilih Semua di Kelas ${filterKelas}`}
               </button>
             )}
 
