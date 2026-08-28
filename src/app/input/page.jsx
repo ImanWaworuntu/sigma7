@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getStudents, getClasses, addRecord, getRules } from '@/lib/dataService';
+import { getStudents, getClasses, addRecord, getRules, getAppUsers } from '@/lib/dataService';
 import imageCompression from 'browser-image-compression';
 
 import { toast, Toaster } from 'react-hot-toast';
@@ -55,14 +55,28 @@ function InputForm() {
   const [photo, setPhoto] = useState(null);
   const [photoBase64, setPhotoBase64] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  
+  const [appUsers, setAppUsers] = useState([]);
+  const [selectedReporter, setSelectedReporter] = useState('');
 
   useEffect(() => {
     const loadInitData = async () => {
-      const [cls, stds, rulesData] = await Promise.all([getClasses(), getStudents(), getRules()]);
+      const promises = [getClasses(), getStudents(), getRules()];
+      if (user?.role === 'admin') {
+        promises.push(getAppUsers());
+      } else {
+        promises.push(Promise.resolve([]));
+      }
+
+      const [cls, stds, rulesData, usersData] = await Promise.all(promises);
       setClassList(cls.filter(c => !c.name.toUpperCase().startsWith('ALUMNI')));
       setStudents(stds.filter(s => !(s.classId || '').toUpperCase().startsWith('ALUMNI')));
       setViolations(rulesData.filter(r => r.type === 'violation'));
       setRewards(rulesData.filter(r => r.type === 'reward'));
+
+      if (usersData && usersData.length > 0) {
+        setAppUsers(usersData);
+      }
 
       const initialStudentId = searchParams.get('studentId');
       if (initialStudentId && step === 2) {
@@ -73,7 +87,7 @@ function InputForm() {
       }
     };
     loadInitData();
-  }, [searchParams]);
+  }, [searchParams, user?.role]);
 
   let filteredStudents = students;
   if (filterKelas) filteredStudents = filteredStudents.filter(s => s.classId === filterKelas);
@@ -144,7 +158,7 @@ function InputForm() {
           date: tanggal,
           hasPhoto: !!photoBase64,
           photoBase64: photoBase64,
-          reportedBy: user?.nama_lengkap || user?.username || 'Sistem'
+          reportedBy: (user?.role === 'admin' && selectedReporter) ? selectedReporter : (user?.nama_lengkap || user?.username || 'Sistem')
         });
       });
 
@@ -164,6 +178,7 @@ function InputForm() {
              setSearchItem('');
              setPhoto(null);
              setPhotoBase64(null);
+             setSelectedReporter('');
              setTanggal(new Date().toISOString().split('T')[0]);
           }
         }, 1500);
@@ -422,6 +437,31 @@ function InputForm() {
               <label htmlFor="tanggal" className="text-sm font-semibold text-slate-700 block mb-2">Tanggal Kejadian</label>
               <input type="date" id="tanggal" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="w-full bg-white border-2 border-slate-200 focus:border-primary-500 rounded-xl py-3 px-4 outline-none transition-colors text-sm shadow-sm" />
             </div>
+
+            {user?.role === 'admin' && (
+              <div className="mb-4">
+                <label htmlFor="reporter" className="text-sm font-semibold text-slate-700 block mb-2">Pelapor / Pencatat Asli</label>
+                <div className="relative">
+                  <select 
+                    id="reporter"
+                    value={selectedReporter}
+                    onChange={(e) => setSelectedReporter(e.target.value)}
+                    className="w-full bg-white border-2 border-slate-200 focus:border-primary-500 rounded-xl py-3 px-4 appearance-none outline-none transition-colors text-sm shadow-sm font-semibold text-slate-700"
+                  >
+                    <option value="">-- Saya Sendiri (Admin) --</option>
+                    {appUsers.map(u => (
+                      <option key={u.id} value={u.nama_lengkap || u.username}>
+                        {u.nama_lengkap || u.username} ({u.role.toUpperCase()})
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-3.5 pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-1">Pilih guru/osis jika Anda menginputkan data ini atas laporan mereka.</p>
+              </div>
+            )}
 
             <div className="mb-6">
               {photo ? (
