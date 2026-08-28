@@ -141,6 +141,7 @@ function InputForm() {
   };
 
   const handleSave = async () => {
+    if (submitting) return;
     setSubmitting(true);
     try {
       // Simpan data teks ke database secara paralel (Sangat Cepat & Instan)
@@ -170,6 +171,7 @@ function InputForm() {
         setTimeout(() => {
           if (searchParams.get('studentId')) {
              router.replace(`/siswa/detail?id=${searchParams.get('studentId')}`);
+             // biarkan submitting tetap true saat navigasi pindah halaman
           } else {
              router.replace('/input?step=1');
              setSelectedStudents([]);
@@ -180,14 +182,15 @@ function InputForm() {
              setPhotoBase64(null);
              setSelectedReporter('');
              setTanggal(new Date().toISOString().split('T')[0]);
+             setSubmitting(false);
           }
         }, 1500);
 
     } catch (error) {
       console.error(error);
       toast.error('Gagal menyimpan data');
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   return (
