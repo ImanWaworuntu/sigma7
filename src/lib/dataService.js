@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import bcrypt from 'bcryptjs';
 
 let cachedRules = null;
 let cachedClasses = null;
@@ -651,6 +652,10 @@ export const getAppUsers = async () => {
 };
 
 export const addAppUser = async (userData) => {
+  if (userData.password) {
+    const salt = await bcrypt.genSalt(10);
+    userData.password = await bcrypt.hash(userData.password, salt);
+  }
   const { data, error } = await supabase.from('users').insert([userData]).select();
   if (error) throw error;
   return data;
@@ -663,6 +668,13 @@ export const deleteAppUser = async (id) => {
 };
 
 export const updateAppUser = async (id, userData) => {
+  if (userData.password) {
+    // Check if the password is ALREADY hashed to prevent double hashing during other updates
+    if (!userData.password.startsWith('$2a$') && !userData.password.startsWith('$2b$')) {
+      const salt = await bcrypt.genSalt(10);
+      userData.password = await bcrypt.hash(userData.password, salt);
+    }
+  }
   const { data, error } = await supabase.from('users').update(userData).eq('id', id).select();
   if (error) throw error;
   return data;

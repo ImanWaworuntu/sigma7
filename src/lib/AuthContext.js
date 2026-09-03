@@ -12,44 +12,36 @@ export function AuthProvider({ children }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Check sessionStorage for saved session
-    const storedUser = sessionStorage.getItem('sigma_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    // Check with backend API if we have a valid HttpOnly cookie
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated) {
+            setUser(data.user);
+          }
+        }
+      } catch (err) {
+        console.error("Session check error", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkSession();
   }, []);
 
   const login = async (username, password) => {
-    // Admin access (Exclusive)
-    if (
-      (username === 'admin' && password === 'admin') || 
-      (username === 'iman.waw@gmail.com' && password === 'sigma123')
-    ) {
-      const userData = { username, role: 'admin', nama_lengkap: 'Administrator' };
-      setUser(userData);
-      sessionStorage.setItem('sigma_user', JSON.stringify(userData));
-      router.push('/dashboard');
-      return true;
-    } 
-
-    // Cek Guru & OSIS di database
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('username', username)
-        .eq('password', password)
-        .single();
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
 
-      if (data && !error) {
-        const userData = { 
-          username: data.username, 
-          role: data.role, 
-          nama_lengkap: data.nama_lengkap 
-        };
-        setUser(userData);
-        sessionStorage.setItem('sigma_user', JSON.stringify(userData));
+      if (res.ok) {
+        const data = await res.json();
+        setUser({ username, role: data.role, nama_lengkap: data.nama_lengkap });
         
         if (data.role === 'osis') {
           router.push('/upacara');
@@ -59,14 +51,18 @@ export function AuthProvider({ children }) {
         return true;
       }
     } catch (err) {
-      console.error("Login DB error:", err);
+      console.error("Login API error:", err);
     }
     return false;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error("Logout error", e);
+    }
     setUser(null);
-    sessionStorage.removeItem('sigma_user');
     router.push('/');
   };
 
