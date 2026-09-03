@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import Image from 'next/image';
-import { toast, Toaster } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -13,14 +13,24 @@ export default function LoginPage() {
   
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
-    setIsLoggingIn(true);
-    const success = await login(username, password);
-    if (!success) {
-      setError('Username atau password salah');
-      toast.error('Username atau password salah!');
+    try {
+      setError('');
+      setIsLoggingIn(true);
+      const success = await login(username, password);
+      if (!success) {
+        setError('Username atau password salah');
+        if (typeof toast !== 'undefined' && toast.error) {
+          toast.error('Username atau password salah!');
+        } else {
+          console.error("Toast is not available");
+        }
+      }
+    } catch (err) {
+      console.error("Login component error:", err);
+      setError('Terjadi kesalahan yang tidak terduga');
+    } finally {
+      setIsLoggingIn(false);
     }
-    setIsLoggingIn(false);
   };
 
   return (
