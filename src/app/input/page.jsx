@@ -89,6 +89,13 @@ function InputForm() {
     loadInitData();
   }, [searchParams, user?.role]);
 
+  // Reset tanggal to today when returning to step 1
+  useEffect(() => {
+    if (step === 1) {
+      setTanggal(new Date().toISOString().split('T')[0]);
+    }
+  }, [step]);
+
   let filteredStudents = students;
   if (filterKelas) filteredStudents = filteredStudents.filter(s => s.classId === filterKelas);
   if (search.length > 0) filteredStudents = filteredStudents.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));

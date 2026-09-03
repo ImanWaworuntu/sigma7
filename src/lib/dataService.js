@@ -474,6 +474,10 @@ export const getRecords = async (filters = {}) => {
       query = query.gte('date', filters.startDate).lte('date', filters.endDate);
     }
     
+    if (filters.reportedBy && filters.reportedBy !== 'all') {
+      query = query.eq('reported_by', filters.reportedBy);
+    }
+    
     query = query.order('created_at', { ascending: false }).range(from, from + limit - 1);
     
     const { data, error } = await query;
@@ -524,7 +528,7 @@ export const deleteRecord = async (recordId) => {
   if (record && record.photo_url) {
     try {
       const urlParts = record.photo_url.split('/');
-      const fileName = urlParts[urlParts.length - 1];
+      const fileName = decodeURIComponent(urlParts[urlParts.length - 1].split('?')[0]);
       if (fileName) {
         await supabase.storage.from('record_photos').remove([fileName]);
       }
@@ -554,7 +558,7 @@ export const updateRecord = async (recordId, recordData) => {
         const { data: oldRecord } = await supabase.from('records').select('photo_url').eq('id', recordId).single();
         if (oldRecord && oldRecord.photo_url) {
           const urlParts = oldRecord.photo_url.split('/');
-          const oldFileName = urlParts[urlParts.length - 1];
+          const oldFileName = decodeURIComponent(urlParts[urlParts.length - 1].split('?')[0]);
           if (oldFileName) {
             await supabase.storage.from('record_photos').remove([oldFileName]);
           }

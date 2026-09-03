@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import { getStudentById, getRecords, issueSp, updateStudent, getClasses, deleteRecord, updateRecord } from '@/lib/dataService';
+import { getStudentById, getRecords, issueSp, updateStudent, getClasses, deleteRecord, updateRecord, getRules, getAppUsers } from '@/lib/dataService';
 import imageCompression from 'browser-image-compression';
 import { toast, Toaster } from 'react-hot-toast';
 
@@ -29,6 +29,21 @@ function SiswaProfileContent() {
   const [photoViewUrl, setPhotoViewUrl] = useState(null);
   const [recordActionLoading, setRecordActionLoading] = useState(false);
 
+  // Edit Record Modal State
+  const [showEditRecordModal, setShowEditRecordModal] = useState(false);
+  const [selectedEditRecord, setSelectedEditRecord] = useState(null);
+  const [rulesData, setRulesData] = useState([]);
+  const [appUsers, setAppUsers] = useState([]);
+  
+  const [editRecordSearch, setEditRecordSearch] = useState('');
+  const [editRecordCategory, setEditRecordCategory] = useState('');
+  const [editRecordSelectedItem, setEditRecordSelectedItem] = useState(null);
+  const [editRecordDate, setEditRecordDate] = useState('');
+  const [editRecordReporter, setEditRecordReporter] = useState('');
+  const [editRecordPhoto, setEditRecordPhoto] = useState(null);
+  const [editRecordPhotoBase64, setEditRecordPhotoBase64] = useState(null);
+
+
   useEffect(() => {
     if (studentId) {
       fetchData();
@@ -50,6 +65,13 @@ function SiswaProfileContent() {
       getClasses().then(setClasses);
     }
   }, [showEditModal, user]);
+
+  useEffect(() => {
+    if (user?.role === 'admin' && rulesData.length === 0) {
+      getRules().then(setRulesData);
+      getAppUsers().then(setAppUsers);
+    }
+  }, [user]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -98,6 +120,60 @@ function SiswaProfileContent() {
       fetchData();
     } catch (e) {
       toast.error("Gagal memperbarui foto");
+    }
+    setRecordActionLoading(false);
+  };
+
+  const handleEditRecordPhotoUpload = async (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setEditRecordPhoto(file);
+      try {
+        const base64 = await compressImageToDataURL(file);
+        setEditRecordPhotoBase64(base64);
+      } catch (err) {
+        console.error("Compression error:", err);
+      }
+    }
+  };
+
+  const openEditRecordModal = (record) => {
+    setSelectedEditRecord(record);
+    const matchedRule = rulesData.find(r => r.desc === (record.description || record.action) && r.points === Math.abs(record.points));
+    setEditRecordSelectedItem(matchedRule || { 
+      id: 'custom', 
+      desc: record.description || record.action, 
+      points: Math.abs(record.points),
+      category: record.category || ''
+    });
+    setEditRecordSearch('');
+    setEditRecordCategory('');
+    setEditRecordDate(record.date || record.createdAt.split('T')[0]);
+    setEditRecordReporter(record.reportedBy !== '-' ? record.reportedBy : '');
+    setEditRecordPhoto(null);
+    setEditRecordPhotoBase64(null);
+    setShowEditRecordModal(true);
+  };
+
+  const handleSaveEditRecord = async () => {
+    if (recordActionLoading) return;
+    setRecordActionLoading(true);
+    try {
+      await updateRecord(selectedEditRecord.id, {
+        action: editRecordSelectedItem.desc,
+        description: editRecordSelectedItem.desc,
+        category: editRecordSelectedItem.category,
+        points: selectedEditRecord.type === 'reward' ? editRecordSelectedItem.points : -Math.abs(editRecordSelectedItem.points),
+        date: editRecordDate,
+        reportedBy: editRecordReporter || (user?.nama_lengkap || user?.username || 'Sistem'),
+        ...(editRecordPhotoBase64 ? { photoBase64: editRecordPhotoBase64 } : {})
+      });
+      toast.success('Perubahan berhasil disimpan!');
+      setShowEditRecordModal(false);
+      fetchData();
+    } catch (error) {
+      console.error(error);
+      toast.error('Gagal menyimpan perubahan');
     }
     setRecordActionLoading(false);
   };
@@ -387,14 +463,9 @@ function SiswaProfileContent() {
                       
                       {user?.role === 'admin' && (
                         <div className="flex items-center gap-1.5 mt-1 sm:mt-0 sm:ml-auto print:hidden w-full sm:w-auto">
-                           <label className="text-[10px] font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded hover:bg-slate-200 cursor-pointer transition-colors border border-slate-200 whitespace-nowrap text-center flex-1 sm:flex-none">
-                              Edit Foto
-                              <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                  handleUpdateRecordPhoto(record.id, e.target.files[0]);
-                                }
-                              }} />
-                           </label>
+                           <button onClick={() => openEditRecordModal(record)} disabled={recordActionLoading} className="text-[10px] font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded hover:bg-slate-200 cursor-pointer transition-colors border border-slate-200 whitespace-nowrap text-center flex-1 sm:flex-none">
+                              Edit
+                           </button>
                            <button onClick={() => handleDeleteRecord(record.id)} disabled={recordActionLoading} className="text-[10px] font-bold bg-red-50 text-red-600 px-3 py-1 rounded hover:bg-red-100 transition-colors border border-red-200 whitespace-nowrap text-center flex-1 sm:flex-none">
                              Hapus
                            </button>
@@ -499,6 +570,146 @@ function SiswaProfileContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT RECORD */}
+      {showEditRecordModal && selectedEditRecord && (
+        <div className="fixed inset-0 z-[105] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-0">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-10 fade-in duration-300">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg text-slate-800">Edit {selectedEditRecord.type === 'reward' ? 'Prestasi' : 'Pelanggaran'}</h3>
+              <button onClick={() => setShowEditRecordModal(false)} className="text-slate-400 hover:bg-slate-100 p-2 rounded-full transition-colors active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {/* Pencarian Keterangan */}
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1">Cari Keterangan Baru</label>
+                {selectedEditRecord.type === 'violation' && (
+                  <select 
+                    value={editRecordCategory}
+                    onChange={(e) => setEditRecordCategory(e.target.value)}
+                    className="w-full bg-slate-50 border-2 border-slate-200 focus:border-primary-500 rounded-xl py-2 px-3 mb-2 outline-none text-sm font-semibold text-slate-700"
+                  >
+                    <option value="">-- Semua Kategori --</option>
+                    <option value="Keterlambatan">Keterlambatan</option>
+                    <option value="Kehadiran">Kehadiran</option>
+                    <option value="Pakaian">Pakaian</option>
+                    <option value="Kepribadian">Kepribadian</option>
+                    <option value="Ketertiban">Ketertiban</option>
+                    <option value="Merokok">Merokok</option>
+                    <option value="Pornografi/Pornoaksi">Pornografi/Pornoaksi</option>
+                    <option value="Senjata Tajam">Senjata Tajam</option>
+                    <option value="Narkoba dan Miras">Narkoba dan Miras</option>
+                    <option value="Berkelahi/Tawuran">Berkelahi/Tawuran</option>
+                    <option value="Intimidasi/Ancaman">Intimidasi/Ancaman</option>
+                    <option value="Berkendaraan">Berkendaraan</option>
+                  </select>
+                )}
+                <div className="relative mb-2">
+                  <input 
+                    type="text" 
+                    value={editRecordSearch}
+                    onChange={(e) => setEditRecordSearch(e.target.value)}
+                    placeholder="Ketik untuk mencari..." 
+                    className="w-full bg-slate-50 border-2 border-slate-200 focus:border-primary-500 rounded-xl py-2 px-3 pl-8 outline-none text-sm"
+                  />
+                  <div className="absolute left-2.5 top-2.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  </div>
+                </div>
+
+                <div className="bg-transparent overflow-hidden flex flex-col gap-2 max-h-[25vh] overflow-y-auto px-1">
+                  {rulesData.filter(i => i.type === selectedEditRecord.type).filter(i => {
+                    if (editRecordCategory && i.category !== editRecordCategory) return false;
+                    return i.desc.toLowerCase().includes(editRecordSearch.toLowerCase());
+                  }).map((item) => {
+                    const isSelected = editRecordSelectedItem?.id === item.id || (editRecordSelectedItem?.id === 'custom' && editRecordSelectedItem?.desc === item.desc);
+                    let cardColor = isSelected 
+                      ? (selectedEditRecord.type === 'reward' ? "bg-reward-50 border-reward-500 ring-1 ring-reward-500/50" : "bg-red-50 border-red-500 ring-1 ring-red-500/50")
+                      : (selectedEditRecord.type === 'reward' ? "bg-white border-reward-100 hover:border-reward-300" : "bg-white border-red-200 hover:border-red-400");
+                    
+                    return (
+                      <div key={item.id} className={`p-3 rounded-xl border-2 transition-all cursor-pointer shadow-sm active:scale-[0.98] ${cardColor}`} onClick={() => setEditRecordSelectedItem(item)}>
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="font-bold text-sm leading-tight text-slate-800">{item.desc}</span> 
+                          <span className={`font-black bg-white/60 px-2 rounded text-xs shrink-0 shadow-sm border ${selectedEditRecord.type === 'reward' ? 'text-reward-600 border-reward-100' : 'text-violation-600 border-violation-100'}`}>
+                            {selectedEditRecord.type === 'reward' ? '+' : ''}{item.points}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1">Tanggal Kejadian</label>
+                <input type="date" value={editRecordDate} onChange={(e) => setEditRecordDate(e.target.value)} className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary-500 bg-white" />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1">Pelapor / Pencatat Asli</label>
+                <select 
+                  value={editRecordReporter}
+                  onChange={(e) => setEditRecordReporter(e.target.value)}
+                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary-500 bg-white"
+                >
+                  <option value="">-- Saya Sendiri (Admin) --</option>
+                  {appUsers.map(u => (
+                    <option key={u.id} value={u.nama_lengkap || u.username}>
+                      {u.nama_lengkap || u.username} ({u.role.toUpperCase()})
+                    </option>
+                  ))}
+                  {editRecordReporter && !appUsers.some(u => (u.nama_lengkap || u.username) === editRecordReporter) && (
+                    <option value={editRecordReporter}>{editRecordReporter} (Data Lama)</option>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1">Ubah Foto (Opsional)</label>
+                {editRecordPhoto ? (
+                  <div className="relative flex flex-col items-center justify-center w-full h-20 border-2 border-primary-500 bg-primary-50 rounded-xl">
+                    <button 
+                      type="button"
+                      onClick={() => { setEditRecordPhoto(null); setEditRecordPhotoBase64(null); }}
+                      className="absolute top-2 right-2 bg-red-100 text-red-600 p-1 rounded-full hover:bg-red-200 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                    <p className="text-[10px] font-bold text-primary-700">Foto Baru Siap</p>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 w-full h-20">
+                    <label className="flex flex-col items-center justify-center flex-1 border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-xl cursor-pointer transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      <p className="text-[10px] font-bold text-slate-500">Pilih Foto Baru</p>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleEditRecordPhotoUpload} />
+                    </label>
+                  </div>
+                )}
+                {selectedEditRecord.photoUrl && !editRecordPhotoBase64 && (
+                  <p className="text-[10px] text-slate-400 mt-1 italic">Terdapat foto lama di database. Mengunggah foto baru akan menimpanya.</p>
+                )}
+              </div>
+              
+              <div className="flex gap-3 mt-2 pt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setShowEditRecordModal(false)} className="flex-1 bg-slate-100 text-slate-600 font-bold py-3 rounded-xl active:scale-95 transition-transform text-sm">Batal</button>
+                <button 
+                  type="button" 
+                  onClick={handleSaveEditRecord}
+                  disabled={recordActionLoading || !editRecordSelectedItem} 
+                  className="flex-1 bg-primary-600 text-white font-bold py-3 rounded-xl shadow-md active:scale-95 transition-transform text-sm flex justify-center items-center"
+                >
+                  {recordActionLoading ? 'Menyimpan...' : 'Update Perubahan'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
