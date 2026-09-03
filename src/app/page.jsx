@@ -2,24 +2,30 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import Image from 'next/image';
+import { toast, Toaster } from 'react-hot-toast';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const success = login(username, password);
+    setError('');
+    setIsLoggingIn(true);
+    const success = await login(username, password);
     if (!success) {
       setError('Username atau password salah');
+      toast.error('Username atau password salah!');
     }
+    setIsLoggingIn(false);
   };
 
   return (
     <div className="flex-1 bg-slate-50 min-h-screen flex flex-col justify-center px-6">
+      <Toaster />
       <div className="bg-white p-8 rounded-3xl shadow-lg border border-slate-100">
         <div className="text-center mb-8">
           <div className="h-28 w-28 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md p-1 border border-slate-100 relative">
@@ -69,8 +75,12 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <button type="submit" className="w-full bg-primary-600 text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-primary-700 active:scale-95 transition-all shadow-md shadow-primary-500/30">
-            Masuk
+          <button 
+            type="submit" 
+            disabled={isLoggingIn}
+            className="w-full bg-primary-600 text-white font-bold rounded-xl py-3.5 mt-4 hover:bg-primary-700 active:scale-95 transition-all shadow-md shadow-primary-500/30 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {isLoggingIn ? 'Memproses...' : 'Masuk'}
           </button>
         </form>
 
