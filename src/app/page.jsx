@@ -27,7 +27,8 @@ export default function LoginPage() {
       }
     } catch (err) {
       console.error("Login component error:", err);
-      setError('Terjadi kesalahan yang tidak terduga');
+      const errMsg = err && err.message ? err.message : String(err);
+      setError(`Error detail: ${errMsg}`);
     } finally {
       setIsLoggingIn(false);
     }
