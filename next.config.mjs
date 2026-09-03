@@ -9,10 +9,10 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig = {
-  output: 'export',
   images: {
     unoptimized: true
-  }
+  },
+  turbopack: {}
 };
 
 export default withPWA(nextConfig);
