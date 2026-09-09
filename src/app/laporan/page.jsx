@@ -124,7 +124,22 @@ export default function LaporanPage() {
     doc.text('(_________________________)', w - 40, finalY + 60, { align: 'center' });
     doc.text('NIP. ', w - 65, finalY + 65, { align: 'left' });
 
-    doc.save(`Laporan_SIGMA7_${Date.now()}.pdf`);
+    const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    const formatDateID = (dateStr) => {
+      if (!dateStr) return "";
+      const d = new Date(dateStr);
+      return `${d.getDate().toString().padStart(2, '0')} ${monthNames[d.getMonth()]}`;
+    };
+
+    let jenisText = "Keseluruhan";
+    if (filterType === 'violation') jenisText = "Pelanggaran";
+    else if (filterType === 'reward') jenisText = "Penghargaan";
+    
+    let kelasText = filterKelas === 'all' ? "Semua Kelas" : `Kelas ${filterKelas}`;
+    
+    const filename = `Rekap ${jenisText} ${kelasText} ${formatDateID(startDate)} - ${formatDateID(endDate)}.pdf`;
+
+    doc.save(filename);
     toast.success("PDF Berhasil Diunduh!");
   };
 

@@ -510,7 +510,7 @@ export const getRecords = async (filters = {}) => {
   }));
 
   if (filters.classId && filters.classId !== 'all') {
-    results = results.filter(r => r.classId === filters.classId);
+    results = results.filter(r => r.classId === filters.classId || r.className === filters.classId);
   }
 
   if (filters.startDate && filters.endDate) {

@@ -58,6 +58,28 @@ export default function RekapitulasiLanjutan() {
     setLoading(false);
   };
 
+  const handlePrint = () => {
+    let jenisText = "Keseluruhan";
+    if (appliedType === 'violation') jenisText = "Pelanggaran";
+    else if (appliedType === 'reward') jenisText = "Penghargaan";
+    
+    let kelasText = "Semua Kelas";
+    if (appliedJenjang !== 'all' && selectedClass === 'all') kelasText = `Kelas ${appliedJenjang}`;
+    else if (selectedClass !== 'all') kelasText = `Kelas ${selectedClass}`;
+
+    const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    const formatDateID = (dateStr) => {
+      if (!dateStr) return "";
+      const d = new Date(dateStr);
+      return `${d.getDate().toString().padStart(2, '0')} ${monthNames[d.getMonth()]}`;
+    };
+
+    const originalTitle = document.title;
+    document.title = `Rekap ${jenisText} ${kelasText} ${formatDateID(startDate)} - ${formatDateID(endDate)}`;
+    window.print();
+    document.title = originalTitle;
+  };
+
   // --- FILTERED DATA ---
   const filteredRecords = useMemo(() => {
     return records.filter(r => {
@@ -255,8 +277,8 @@ export default function RekapitulasiLanjutan() {
            <button onClick={handleApplyFilters} className="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 h-[38px] flex items-center justify-center min-w-[100px]">
              {loading ? 'Memuat...' : 'Terapkan'}
            </button>
-           <button onClick={() => window.print()} className="bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 h-[38px] flex items-center justify-center min-w-[140px] gap-2 ml-auto">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+           <button onClick={handlePrint} className="bg-white hover:bg-slate-100 text-slate-800 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all active:scale-95 h-[38px] flex items-center justify-center min-w-[140px] gap-2 ml-auto">
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
              Cetak Laporan
            </button>
         </div>
@@ -522,7 +544,7 @@ export default function RekapitulasiLanjutan() {
               <div key={jenjang} className="mb-8">
                 <h4 className="text-md font-bold bg-slate-100 p-2 border border-black mb-4 uppercase">{jenjang}</h4>
                 
-                {Object.keys(groupedDataToPrint[jenjang]).sort().map(className => (
+                {Object.keys(groupedDataToPrint[jenjang]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })).map(className => (
                   <div key={className} className="mb-6 pl-4 border-l-2 border-black">
                     <h5 className="text-sm font-bold mb-3 underline">Kelas: {className}</h5>
                     
